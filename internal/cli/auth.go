@@ -178,9 +178,10 @@ func runAuthStatus(cmd *cobra.Command, args []string) error {
 
 	client := github.NewClient(token)
 	var login string
+	var rateLimit *models.RateLimit
 	var validateErr error
 	validateAction := func() {
-		login, validateErr = client.ViewerLogin(cmd.Context())
+		login, rateLimit, validateErr = client.ViewerLoginWithRateLimit(cmd.Context())
 	}
 	if err := spinner.New().Title("Checking auth...").Action(validateAction).Run(); err != nil {
 		return fmt.Errorf("spinner: %w", err)
@@ -201,6 +202,7 @@ func runAuthStatus(cmd *cobra.Command, args []string) error {
 		Provider:      authProv,
 		Login:         login,
 		Authenticated: true,
+		RateLimit:     rateLimit,
 	}
 
 	if outputJSON(status) {
@@ -208,6 +210,9 @@ func runAuthStatus(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("✓ Authenticated via %s as %s\n", authProv, login)
+	if rateLimit != nil {
+		fmt.Printf("  Rate limit: %d/%d remaining (resets %s)\n", rateLimit.Remaining, rateLimit.Limit, rateLimit.ResetAt.Local().Format("15:04:05"))
+	}
 	return nil
 }
 

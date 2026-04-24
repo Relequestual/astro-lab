@@ -68,6 +68,15 @@ type AuthStatus struct {
 	Provider      AuthProvider `json:"provider"`
 	Login         string       `json:"login"`
 	Authenticated bool         `json:"authenticated"`
+	RateLimit     *RateLimit   `json:"rateLimit,omitempty"`
+}
+
+// RateLimit represents the GitHub API rate limit status
+type RateLimit struct {
+	Limit     int       `json:"limit"`
+	Cost      int       `json:"cost"`
+	Remaining int       `json:"remaining"`
+	ResetAt   time.Time `json:"resetAt"`
 }
 
 const CurrentSchemaVersion = 1

@@ -29,6 +29,46 @@ func (c *Client) ViewerLogin(ctx context.Context) (string, error) {
 	return data.Viewer.Login, nil
 }
 
+// ViewerLoginWithRateLimit queries the authenticated user's login and current rate limit status
+func (c *Client) ViewerLoginWithRateLimit(ctx context.Context) (string, *models.RateLimit, error) {
+	resp, err := c.DoWithRetry(ctx, GraphQLRequest{
+		Query: `query {
+            viewer { login }
+            rateLimit {
+                limit
+                cost
+                remaining
+                resetAt
+            }
+        }`,
+	})
+	if err != nil {
+		return "", nil, err
+	}
+
+	var data struct {
+		Viewer struct {
+			Login string `json:"login"`
+		} `json:"viewer"`
+		RateLimit struct {
+			Limit     int       `json:"limit"`
+			Cost      int       `json:"cost"`
+			Remaining int       `json:"remaining"`
+			ResetAt   time.Time `json:"resetAt"`
+		} `json:"rateLimit"`
+	}
+	if err := json.Unmarshal(resp.Data, &data); err != nil {
+		return "", nil, fmt.Errorf("parsing viewer login with rate limit: %w", err)
+	}
+	rl := &models.RateLimit{
+		Limit:     data.RateLimit.Limit,
+		Cost:      data.RateLimit.Cost,
+		Remaining: data.RateLimit.Remaining,
+		ResetAt:   data.RateLimit.ResetAt,
+	}
+	return data.Viewer.Login, rl, nil
+}
+
 // FetchLists fetches all user lists with pagination
 func (c *Client) FetchLists(ctx context.Context) ([]models.StarList, error) {
 	var allLists []models.StarList
