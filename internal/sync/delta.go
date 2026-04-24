@@ -76,7 +76,7 @@ func (e *Engine) syncMemberships(ctx context.Context, meta *models.Metadata) err
 			}
 		}
 
-		items, err := e.client.FetchListItems(ctx, listID)
+		items, err := e.client.FetchListItems(ctx, listID, nil)
 		if err != nil {
 			return fmt.Errorf("fetching items for list %s: %w", list.Name, err)
 		}

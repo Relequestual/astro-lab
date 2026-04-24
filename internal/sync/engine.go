@@ -10,6 +10,25 @@ import (
 	"github.com/Relequestual/astro-lab/internal/storage"
 )
 
+// SyncPhase describes the current phase of a sync operation
+type SyncPhase string
+
+const (
+	PhaseStars       SyncPhase = "stars"
+	PhaseLists       SyncPhase = "lists"
+	PhaseMemberships SyncPhase = "memberships"
+)
+
+// SyncProgress reports progress during a sync operation
+type SyncProgress struct {
+	Phase   SyncPhase
+	Fetched int
+	Total   int
+}
+
+// SyncProgressFunc is called during sync to report progress
+type SyncProgressFunc func(SyncProgress)
+
 // Engine handles sync operations between GitHub and local storage
 type Engine struct {
 	client *github.Client
@@ -41,7 +60,7 @@ func (r SyncResult) String() string {
 }
 
 // Delta performs an incremental sync since last sync time
-func (e *Engine) Delta(ctx context.Context) (*SyncResult, error) {
+func (e *Engine) Delta(ctx context.Context, onProgress SyncProgressFunc) (*SyncResult, error) {
 	meta, err := e.store.LoadMetadata()
 	if err != nil {
 		return nil, fmt.Errorf("loading metadata: %w", err)
@@ -49,17 +68,23 @@ func (e *Engine) Delta(ctx context.Context) (*SyncResult, error) {
 
 	// If no previous sync, do a full sync
 	if meta.LastSyncedAt.IsZero() {
-		return e.Full(ctx)
+		return e.Full(ctx, onProgress)
 	}
 
-	return e.deltaSync(ctx, meta)
+	return e.deltaSync(ctx, meta, onProgress)
 }
 
-func (e *Engine) deltaSync(ctx context.Context, meta *models.Metadata) (*SyncResult, error) {
+func (e *Engine) deltaSync(ctx context.Context, meta *models.Metadata, onProgress SyncProgressFunc) (*SyncResult, error) {
 	result := &SyncResult{}
 
 	// Fetch new stars since last sync
-	newStars, err := e.client.FetchStarredRepos(ctx, meta.LastSyncedAt)
+	var starProgress github.ProgressFunc
+	if onProgress != nil {
+		starProgress = func(fetched, total int) {
+			onProgress(SyncProgress{Phase: PhaseStars, Fetched: fetched, Total: total})
+		}
+	}
+	newStars, err := e.client.FetchStarredRepos(ctx, meta.LastSyncedAt, starProgress)
 	if err != nil {
 		return nil, fmt.Errorf("fetching new stars: %w", err)
 	}

@@ -3,6 +3,8 @@ package cli
 import (
 	"fmt"
 
+	tea "github.com/charmbracelet/bubbletea"
+
 	"github.com/Relequestual/astro-lab/internal/github"
 	"github.com/Relequestual/astro-lab/internal/storage"
 	gosync "github.com/Relequestual/astro-lab/internal/sync"
@@ -33,20 +35,40 @@ func runSync(cmd *cobra.Command, args []string) error {
 	engine := gosync.NewEngine(client, store)
 
 	var result *gosync.SyncResult
+	var syncErr error
+
+	title := "Performing delta sync..."
 	if syncFull {
-		if !jsonOutput {
-			fmt.Println("Performing full sync...")
-		}
-		result, err = engine.Full(cmd.Context())
-	} else {
-		if !jsonOutput {
-			fmt.Println("Performing delta sync...")
-		}
-		result, err = engine.Delta(cmd.Context())
+		title = "Performing full sync..."
 	}
 
+	err = runWithProgress(title, func(p *tea.Program) error {
+		onProgress := func(sp gosync.SyncProgress) {
+			var text string
+			switch sp.Phase {
+			case gosync.PhaseStars:
+				text = fmt.Sprintf("Fetching stars... %d/%d", sp.Fetched, sp.Total)
+			case gosync.PhaseLists:
+				text = fmt.Sprintf("Fetching lists... %d/%d", sp.Fetched, sp.Total)
+			case gosync.PhaseMemberships:
+				text = fmt.Sprintf("Fetching list items... %d/%d lists", sp.Fetched, sp.Total)
+			}
+			p.Send(progressUpdate{text: text})
+		}
+
+		if syncFull {
+			result, syncErr = engine.Full(cmd.Context(), onProgress)
+		} else {
+			result, syncErr = engine.Delta(cmd.Context(), onProgress)
+		}
+		return nil
+	})
 	if err != nil {
-		return fmt.Errorf("sync failed: %w", err)
+		return fmt.Errorf("sync: %w", err)
+	}
+
+	if syncErr != nil {
+		return fmt.Errorf("sync failed: %w", syncErr)
 	}
 
 	if outputJSON(result) {

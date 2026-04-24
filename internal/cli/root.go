@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Relequestual/astro-lab/internal/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -18,6 +19,9 @@ var rootCmd = &cobra.Command{
 	Use:   "astlab",
 	Short: "Astrometrics Lab - Manage GitHub stars and star lists",
 	Long:  "A CLI and TUI for managing GitHub stars and star lists safely.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return tui.Run()
+	},
 }
 
 func init() {

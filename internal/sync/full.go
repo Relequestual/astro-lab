@@ -5,16 +5,23 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Relequestual/astro-lab/internal/github"
 	"github.com/Relequestual/astro-lab/internal/models"
 	"github.com/Relequestual/astro-lab/internal/storage"
 )
 
 // Full performs a complete sync, replacing all local data
-func (e *Engine) Full(ctx context.Context) (*SyncResult, error) {
+func (e *Engine) Full(ctx context.Context, onProgress SyncProgressFunc) (*SyncResult, error) {
 	result := &SyncResult{FullSync: true}
 
 	// Fetch all stars
-	allStars, err := e.client.FetchStarredRepos(ctx, time.Time{})
+	var starProgress github.ProgressFunc
+	if onProgress != nil {
+		starProgress = func(fetched, total int) {
+			onProgress(SyncProgress{Phase: PhaseStars, Fetched: fetched, Total: total})
+		}
+	}
+	allStars, err := e.client.FetchStarredRepos(ctx, time.Time{}, starProgress)
 	if err != nil {
 		return nil, fmt.Errorf("fetching all stars: %w", err)
 	}
@@ -64,8 +71,11 @@ func (e *Engine) Full(ctx context.Context) (*SyncResult, error) {
 		RepoToLists: make(map[string][]string),
 	}
 
-	for _, list := range allLists {
-		items, err := e.client.FetchListItems(ctx, list.ID)
+	for i, list := range allLists {
+		if onProgress != nil {
+			onProgress(SyncProgress{Phase: PhaseMemberships, Fetched: i, Total: len(allLists)})
+		}
+		items, err := e.client.FetchListItems(ctx, list.ID, nil)
 		if err != nil {
 			return nil, fmt.Errorf("fetching items for list %s: %w", list.Name, err)
 		}

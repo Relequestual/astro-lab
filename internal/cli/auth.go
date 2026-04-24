@@ -8,6 +8,7 @@ import (
 	"github.com/Relequestual/astro-lab/internal/auth"
 	"github.com/Relequestual/astro-lab/internal/github"
 	"github.com/Relequestual/astro-lab/internal/models"
+	"github.com/charmbracelet/huh/spinner"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -74,9 +75,16 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 
 		// Validate token
 		client := github.NewClient(token)
-		login, err := client.ViewerLogin(cmd.Context())
-		if err != nil {
-			return fmt.Errorf("failed to validate token: %w", err)
+		var login string
+		var validateErr error
+		validateAction := func() {
+			login, validateErr = client.ViewerLogin(cmd.Context())
+		}
+		if err := spinner.New().Title("Validating token...").Action(validateAction).Run(); err != nil {
+			return fmt.Errorf("spinner: %w", err)
+		}
+		if validateErr != nil {
+			return fmt.Errorf("failed to validate token: %w", validateErr)
 		}
 
 		// Store token if requested
@@ -123,9 +131,16 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 
 	// Validate token
 	client := github.NewClient(tokenInput)
-	login, err := client.ViewerLogin(cmd.Context())
-	if err != nil {
-		return fmt.Errorf("invalid token: %w", err)
+	var login string
+	var validateErr error
+	validateAction := func() {
+		login, validateErr = client.ViewerLogin(cmd.Context())
+	}
+	if err := spinner.New().Title("Validating token...").Action(validateAction).Run(); err != nil {
+		return fmt.Errorf("spinner: %w", err)
+	}
+	if validateErr != nil {
+		return fmt.Errorf("invalid token: %w", validateErr)
 	}
 
 	// Store token if requested
@@ -162,8 +177,15 @@ func runAuthStatus(cmd *cobra.Command, args []string) error {
 	}
 
 	client := github.NewClient(token)
-	login, err := client.ViewerLogin(cmd.Context())
-	if err != nil {
+	var login string
+	var validateErr error
+	validateAction := func() {
+		login, validateErr = client.ViewerLogin(cmd.Context())
+	}
+	if err := spinner.New().Title("Checking auth...").Action(validateAction).Run(); err != nil {
+		return fmt.Errorf("spinner: %w", err)
+	}
+	if validateErr != nil {
 		status := models.AuthStatus{
 			Provider:      authProv,
 			Authenticated: false,
@@ -171,7 +193,7 @@ func runAuthStatus(cmd *cobra.Command, args []string) error {
 		if outputJSON(status) {
 			return nil
 		}
-		fmt.Printf("Token found via %s but validation failed: %s\n", authProv, auth.RedactSecrets(err.Error()))
+		fmt.Printf("Token found via %s but validation failed: %s\n", authProv, auth.RedactSecrets(validateErr.Error()))
 		return nil
 	}
 

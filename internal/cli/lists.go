@@ -6,6 +6,8 @@ import (
 	"text/tabwriter"
 
 	"github.com/Relequestual/astro-lab/internal/github"
+	"github.com/Relequestual/astro-lab/internal/models"
+	"github.com/charmbracelet/huh/spinner"
 	"github.com/spf13/cobra"
 )
 
@@ -26,9 +28,16 @@ func runLists(cmd *cobra.Command, args []string) error {
 	}
 
 	client := github.NewClient(token)
-	lists, err := client.FetchLists(cmd.Context())
-	if err != nil {
-		return fmt.Errorf("fetching lists: %w", err)
+	var lists []models.StarList
+	var fetchErr error
+	action := func() {
+		lists, fetchErr = client.FetchLists(cmd.Context())
+	}
+	if err := spinner.New().Title("Fetching lists...").Action(action).Run(); err != nil {
+		return fmt.Errorf("spinner: %w", err)
+	}
+	if fetchErr != nil {
+		return fmt.Errorf("fetching lists: %w", fetchErr)
 	}
 
 	if outputJSON(lists) {

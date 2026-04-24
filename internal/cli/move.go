@@ -7,6 +7,7 @@ import (
 	"github.com/Relequestual/astro-lab/internal/github"
 	"github.com/Relequestual/astro-lab/internal/mutation"
 	"github.com/Relequestual/astro-lab/internal/storage"
+	"github.com/charmbracelet/huh/spinner"
 	"github.com/spf13/cobra"
 )
 
@@ -52,9 +53,16 @@ func runMove(cmd *cobra.Command, args []string) error {
 	engine := mutation.NewMoveEngine(client, store)
 
 	// Plan the move
-	result, err := engine.Plan(cmd.Context(), repoID, repoName, moveToLists)
-	if err != nil {
-		return fmt.Errorf("planning move: %w", err)
+	var result *mutation.MoveResult
+	var planErr error
+	planAction := func() {
+		result, planErr = engine.Plan(cmd.Context(), repoID, repoName, moveToLists)
+	}
+	if err := spinner.New().Title("Planning move...").Action(planAction).Run(); err != nil {
+		return fmt.Errorf("spinner: %w", err)
+	}
+	if planErr != nil {
+		return fmt.Errorf("planning move: %w", planErr)
 	}
 
 	if outputJSON(result) {
@@ -81,9 +89,15 @@ func runMove(cmd *cobra.Command, args []string) error {
 	}
 
 	// Apply
-	result, err = engine.Apply(cmd.Context(), repoID, repoName, moveToLists)
-	if err != nil {
-		return fmt.Errorf("applying move: %w", err)
+	var applyErr error
+	applyAction := func() {
+		result, applyErr = engine.Apply(cmd.Context(), repoID, repoName, moveToLists)
+	}
+	if err := spinner.New().Title("Applying changes...").Action(applyAction).Run(); err != nil {
+		return fmt.Errorf("spinner: %w", err)
+	}
+	if applyErr != nil {
+		return fmt.Errorf("applying move: %w", applyErr)
 	}
 
 	fmt.Println("✓ Changes applied successfully.")

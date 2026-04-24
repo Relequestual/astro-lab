@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/Relequestual/astro-lab/internal/github"
+	"github.com/Relequestual/astro-lab/internal/models"
+	"github.com/charmbracelet/huh/spinner"
 	"github.com/spf13/cobra"
 )
 
@@ -42,9 +44,16 @@ func runStars(cmd *cobra.Command, args []string) error {
 	}
 
 	client := github.NewClient(token)
-	stars, err := client.FetchStarredRepos(cmd.Context(), since)
-	if err != nil {
-		return fmt.Errorf("fetching stars: %w", err)
+	var stars []models.Repository
+	var fetchErr error
+	action := func() {
+		stars, fetchErr = client.FetchStarredRepos(cmd.Context(), since, nil)
+	}
+	if err := spinner.New().Title("Fetching stars...").Action(action).Run(); err != nil {
+		return fmt.Errorf("spinner: %w", err)
+	}
+	if fetchErr != nil {
+		return fmt.Errorf("fetching stars: %w", fetchErr)
 	}
 
 	// Apply limit

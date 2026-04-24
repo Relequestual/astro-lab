@@ -117,9 +117,12 @@ func (c *Client) FetchLists(ctx context.Context) ([]models.StarList, error) {
 	return allLists, nil
 }
 
+// ProgressFunc is called during paginated fetches with the number of items fetched so far and the total.
+type ProgressFunc func(fetched, total int)
+
 // FetchStarredRepos fetches starred repositories with pagination
 // If since is non-zero, stops when reaching repos starred before that time
-func (c *Client) FetchStarredRepos(ctx context.Context, since time.Time) ([]models.Repository, error) {
+func (c *Client) FetchStarredRepos(ctx context.Context, since time.Time, onProgress ProgressFunc) ([]models.Repository, error) {
 	var allRepos []models.Repository
 	var cursor *string
 
@@ -135,6 +138,7 @@ func (c *Client) FetchStarredRepos(ctx context.Context, since time.Time) ([]mode
 			Query: `query Stars($first: Int!, $after: String) {
                 viewer {
                     starredRepositories(first: $first, after: $after, orderBy: { field: STARRED_AT, direction: DESC }) {
+                        totalCount
                         edges {
                             starredAt
                             node {
@@ -160,7 +164,8 @@ func (c *Client) FetchStarredRepos(ctx context.Context, since time.Time) ([]mode
 		var data struct {
 			Viewer struct {
 				StarredRepositories struct {
-					Edges []struct {
+					TotalCount int `json:"totalCount"`
+					Edges      []struct {
 						StarredAt time.Time `json:"starredAt"`
 						Node      struct {
 							ID            string `json:"id"`
@@ -195,6 +200,10 @@ func (c *Client) FetchStarredRepos(ctx context.Context, since time.Time) ([]mode
 			})
 		}
 
+		if onProgress != nil {
+			onProgress(len(allRepos), data.Viewer.StarredRepositories.TotalCount)
+		}
+
 		if hitCutoff || !data.Viewer.StarredRepositories.PageInfo.HasNextPage {
 			break
 		}
@@ -205,7 +214,7 @@ func (c *Client) FetchStarredRepos(ctx context.Context, since time.Time) ([]mode
 }
 
 // FetchListItems fetches all items in a specific list with pagination
-func (c *Client) FetchListItems(ctx context.Context, listID string) ([]models.Repository, error) {
+func (c *Client) FetchListItems(ctx context.Context, listID string, onProgress ProgressFunc) ([]models.Repository, error) {
 	var allItems []models.Repository
 	var cursor *string
 
@@ -223,6 +232,7 @@ func (c *Client) FetchListItems(ctx context.Context, listID string) ([]models.Re
                 node(id: $listId) {
                     ... on UserList {
                         items(first: $first, after: $after) {
+                            totalCount
                             nodes {
                                 ... on Repository {
                                     id
@@ -248,7 +258,8 @@ func (c *Client) FetchListItems(ctx context.Context, listID string) ([]models.Re
 		var data struct {
 			Node struct {
 				Items struct {
-					Nodes []struct {
+					TotalCount int `json:"totalCount"`
+					Nodes      []struct {
 						ID            string `json:"id"`
 						NameWithOwner string `json:"nameWithOwner"`
 						Description   string `json:"description"`
@@ -275,6 +286,10 @@ func (c *Client) FetchListItems(ctx context.Context, listID string) ([]models.Re
 				Description:   n.Description,
 				URL:           n.URL,
 			})
+		}
+
+		if onProgress != nil {
+			onProgress(len(allItems), data.Node.Items.TotalCount)
 		}
 
 		if !data.Node.Items.PageInfo.HasNextPage {
