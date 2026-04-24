@@ -11,6 +11,8 @@ permissions:
 
 jobs:
   build-and-test:
+    # Disabled while the repo is private. Remove this line to enable CI.
+    if: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
