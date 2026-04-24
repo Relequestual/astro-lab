@@ -19,6 +19,9 @@ func (e *Engine) Full(ctx context.Context) (*SyncResult, error) {
 		return nil, fmt.Errorf("fetching all stars: %w", err)
 	}
 
+	// Load existing stars before saving to detect removals
+	oldStars, _ := e.store.LoadStars()
+
 	starsData := &storage.StarsData{
 		ByRepoID: make(map[string]models.Repository),
 	}
@@ -84,8 +87,7 @@ func (e *Engine) Full(ctx context.Context) (*SyncResult, error) {
 		return nil, fmt.Errorf("loading metadata: %w", err)
 	}
 
-	// Detect removed stars on full sync
-	oldStars, _ := e.store.LoadStars()
+	// Detect removed stars using pre-save snapshot
 	if oldStars != nil {
 		for id := range oldStars.ByRepoID {
 			if _, exists := starsData.ByRepoID[id]; !exists {

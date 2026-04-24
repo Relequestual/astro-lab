@@ -34,6 +34,10 @@ func AtomicWrite(path string, data []byte) error {
 		return fmt.Errorf("closing temp file: %w", err)
 	}
 
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("removing destination file: %w", err)
+	}
+
 	if err := os.Rename(tmpName, path); err != nil {
 		return fmt.Errorf("renaming temp file: %w", err)
 	}

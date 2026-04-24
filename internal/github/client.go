@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/Relequestual/astro-lab/internal/auth"
 )
@@ -20,8 +21,10 @@ type Client struct {
 
 func NewClient(token string) *Client {
 	return &Client{
-		token:      token,
-		httpClient: &http.Client{},
+		token: token,
+		httpClient: &http.Client{
+			Timeout: 30 * time.Second,
+		},
 	}
 }
 
@@ -116,7 +119,7 @@ type QueryError struct {
 
 func (e *QueryError) Error() string {
 	if len(e.Errors) > 0 {
-		return fmt.Sprintf("GraphQL error: %s", e.Errors[0].Message)
+		return fmt.Sprintf("GraphQL error: %s", e.Errors[0].Error())
 	}
 	return "unknown GraphQL error"
 }

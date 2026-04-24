@@ -76,9 +76,23 @@ func (e *Engine) syncMemberships(ctx context.Context, meta *models.Metadata) err
 		for i, item := range items {
 			repoIDs[i] = item.ID
 		}
+
+		// Remove listID from repos that are no longer in this list
+		newRepoSet := make(map[string]bool, len(repoIDs))
+		for _, id := range repoIDs {
+			newRepoSet[id] = true
+		}
+		if oldRepoIDs, ok := memberships.ListToRepos[listID]; ok {
+			for _, oldRepoID := range oldRepoIDs {
+				if !newRepoSet[oldRepoID] {
+					memberships.RepoToLists[oldRepoID] = removeString(memberships.RepoToLists[oldRepoID], listID)
+				}
+			}
+		}
+
 		memberships.ListToRepos[listID] = repoIDs
 
-		// Rebuild repo->list mapping for affected repos
+		// Add listID to repos currently in the list
 		for _, repoID := range repoIDs {
 			lists := memberships.RepoToLists[repoID]
 			if !containsString(lists, listID) {
@@ -97,4 +111,14 @@ func containsString(slice []string, s string) bool {
 		}
 	}
 	return false
+}
+
+func removeString(slice []string, s string) []string {
+	result := make([]string, 0, len(slice))
+	for _, v := range slice {
+		if v != s {
+			result = append(result, v)
+		}
+	}
+	return result
 }

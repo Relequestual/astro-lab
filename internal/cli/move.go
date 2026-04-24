@@ -58,12 +58,12 @@ func runMove(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("planning move: %w", err)
 	}
 
-	// Display diff
-	displayMoveDiff(result, store)
-
 	if outputJSON(result) {
 		return nil
 	}
+
+	// Display diff
+	displayMoveDiff(result, store)
 
 	if !moveApply {
 		fmt.Println("\nDry run - no changes made. Use --apply to execute.")

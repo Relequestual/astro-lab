@@ -11,12 +11,12 @@ func TestRedactSecrets(t *testing.T) {
 		{
 			name:  "redact ghp token",
 			input: "error: ghp_1234567890abcdefghijklmnopqrstuvwxyz12 is invalid",
-			want:  "error: ghp_****************************wxyz is invalid",
+			want:  "error: ghp_**********************************yz12 is invalid",
 		},
 		{
 			name:  "redact github_pat token",
 			input: "token: github_pat_abcdefghij1234567890AB_XYZ",
-			want:  "token: gith************************************_XYZ",
+			want:  "token: gith*****************************_XYZ",
 		},
 		{
 			name:  "no secrets to redact",
@@ -33,12 +33,8 @@ func TestRedactSecrets(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := RedactSecrets(tt.input)
-			if got == tt.input && tt.input != tt.want {
-				t.Errorf("RedactSecrets() did not redact: got %q", got)
-			}
-			// Check that original token is not present if it should be redacted
-			if tt.input != tt.want && got == tt.input {
-				t.Errorf("Expected redaction but got original string")
+			if got != tt.want {
+				t.Errorf("RedactSecrets() = %q, want %q", got, tt.want)
 			}
 		})
 	}

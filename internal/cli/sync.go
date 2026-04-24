@@ -35,10 +35,14 @@ func runSync(cmd *cobra.Command, args []string) error {
 
 	var result *gosync.SyncResult
 	if syncFull {
-		fmt.Println("Performing full sync...")
+		if !jsonOutput {
+			fmt.Println("Performing full sync...")
+		}
 		result, err = engine.Full(context.Background())
 	} else {
-		fmt.Println("Performing delta sync...")
+		if !jsonOutput {
+			fmt.Println("Performing delta sync...")
+		}
 		result, err = engine.Delta(context.Background())
 	}
 

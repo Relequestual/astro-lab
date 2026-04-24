@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"os"
@@ -11,6 +10,7 @@ import (
 	"github.com/Relequestual/astro-lab/internal/github"
 	"github.com/Relequestual/astro-lab/internal/models"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var authCmd = &cobra.Command{
@@ -80,14 +80,14 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Token method: read from stdin or prompt
+	// Token method: read from stdin with no echo
 	fmt.Print("Enter GitHub token: ")
-	reader := bufio.NewReader(os.Stdin)
-	tokenInput, err := reader.ReadString('\n')
+	tokenBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+	fmt.Println() // newline after hidden input
 	if err != nil {
 		return fmt.Errorf("reading token: %w", err)
 	}
-	tokenInput = strings.TrimSpace(tokenInput)
+	tokenInput := strings.TrimSpace(string(tokenBytes))
 
 	if tokenInput == "" {
 		return fmt.Errorf("empty token provided")

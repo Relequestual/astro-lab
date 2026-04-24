@@ -1,11 +1,14 @@
 module github.com/Relequestual/astro-lab
 
-go 1.24.13
+go 1.24.0
+
+toolchain go1.24.13
 
 require (
 	github.com/charmbracelet/bubbletea v1.3.10
 	github.com/spf13/cobra v1.10.2
 	github.com/zalando/go-keyring v0.2.8
+	golang.org/x/term v0.28.0
 )
 
 require (
