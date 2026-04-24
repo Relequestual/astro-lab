@@ -59,7 +59,9 @@ func (e *Engine) syncMemberships(ctx context.Context, meta *models.Metadata) err
 	for listID, list := range listsData.ByListID {
 		// For delta sync, only refresh lists that changed
 		if !meta.LastSyncedAt.IsZero() {
-			if list.UpdatedAt.Before(meta.LastSyncedAt) && list.LastAddedAt.Before(meta.LastSyncedAt) {
+			updatedBefore := list.UpdatedAt.Before(meta.LastSyncedAt)
+			addedBefore := list.LastAddedAt.IsZero() || list.LastAddedAt.Before(meta.LastSyncedAt)
+			if updatedBefore && addedBefore {
 				continue
 			}
 		}

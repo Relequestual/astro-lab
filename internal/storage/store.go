@@ -24,7 +24,11 @@ func DefaultDir() string {
 	if d := os.Getenv("ASTLAB_DATA_DIR"); d != "" {
 		return d
 	}
-	home, _ := os.UserHomeDir()
+	home, err := os.UserHomeDir()
+	if err != nil || home == "" {
+		// Fall back to current directory if home is unavailable
+		home = "."
+	}
 	return filepath.Join(home, ".astlab")
 }
 
