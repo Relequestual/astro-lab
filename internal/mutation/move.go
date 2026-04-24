@@ -75,9 +75,11 @@ func (m *MoveEngine) Apply(ctx context.Context, repoID string, repoName string, 
 		repos := memberships.ListToRepos[listID]
 		memberships.ListToRepos[listID] = removeString(repos, repoID)
 	}
-	// Add repo to new lists
+	// Add repo to new lists (with dedup check)
 	for _, listID := range result.Diff.Added {
-		memberships.ListToRepos[listID] = append(memberships.ListToRepos[listID], repoID)
+		if !containsString(memberships.ListToRepos[listID], repoID) {
+			memberships.ListToRepos[listID] = append(memberships.ListToRepos[listID], repoID)
+		}
 	}
 	memberships.RepoToLists[repoID] = desiredListIDs
 
@@ -88,6 +90,15 @@ func (m *MoveEngine) Apply(ctx context.Context, repoID string, repoName string, 
 	result.Applied = true
 	result.DryRun = false
 	return result, nil
+}
+
+func containsString(slice []string, s string) bool {
+	for _, v := range slice {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }
 
 func removeString(slice []string, s string) []string {

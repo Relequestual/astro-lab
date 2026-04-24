@@ -98,17 +98,27 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// Token method: read from stdin with no echo
-	fmt.Print("Enter GitHub token: ")
-	tokenBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
-	fmt.Println() // newline after hidden input
-	if err != nil {
-		return fmt.Errorf("reading token: %w", err)
-	}
-	tokenInput := strings.TrimSpace(string(tokenBytes))
-
-	if tokenInput == "" {
-		return fmt.Errorf("empty token provided")
+	// Token method: read from stdin
+	var tokenInput string
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		// Interactive TTY: use no-echo input
+		fmt.Print("Enter GitHub token: ")
+		tokenBytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+		fmt.Println() // newline after hidden input
+		if err != nil {
+			return fmt.Errorf("reading token: %w", err)
+		}
+		tokenInput = strings.TrimSpace(string(tokenBytes))
+		if tokenInput == "" {
+			return fmt.Errorf("empty token provided")
+		}
+	} else {
+		// Piped/redirected stdin: read line
+		var err error
+		tokenInput, err = auth.ReadTokenFromInput(os.Stdin)
+		if err != nil {
+			return err
+		}
 	}
 
 	// Validate token

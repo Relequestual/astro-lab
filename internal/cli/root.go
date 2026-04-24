@@ -32,15 +32,16 @@ func Execute() {
 	}
 }
 
-// outputJSON outputs data as JSON if --json flag is set, returns true if it handled output
+// outputJSON outputs data as JSON if --json flag is set, returns true if it handled output successfully
 func outputJSON(v interface{}) bool {
 	if !jsonOutput {
 		return false
 	}
-	enc := json.NewEncoder(os.Stdout)
+	enc := json.NewEncoder(rootCmd.OutOrStdout())
 	enc.SetIndent("", "  ")
 	if err := enc.Encode(v); err != nil {
-		fmt.Fprintf(os.Stderr, "Error encoding JSON: %v\n", err)
+		fmt.Fprintf(rootCmd.ErrOrStderr(), "Error encoding JSON: %v\n", err)
+		return false
 	}
 	return true
 }
