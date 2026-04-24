@@ -20,7 +20,11 @@ func (e *Engine) Full(ctx context.Context) (*SyncResult, error) {
 	}
 
 	// Load existing stars before saving to detect removals
-	oldStars, _ := e.store.LoadStars()
+	oldStars, err := e.store.LoadStars()
+	if err != nil {
+		// Non-fatal: if we can't load old stars (corrupt/missing), just skip removal detection
+		oldStars = nil
+	}
 
 	starsData := &storage.StarsData{
 		ByRepoID: make(map[string]models.Repository),

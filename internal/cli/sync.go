@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/Relequestual/astro-lab/internal/github"
@@ -38,12 +37,12 @@ func runSync(cmd *cobra.Command, args []string) error {
 		if !jsonOutput {
 			fmt.Println("Performing full sync...")
 		}
-		result, err = engine.Full(context.Background())
+		result, err = engine.Full(cmd.Context())
 	} else {
 		if !jsonOutput {
 			fmt.Println("Performing delta sync...")
 		}
-		result, err = engine.Delta(context.Background())
+		result, err = engine.Delta(cmd.Context())
 	}
 
 	if err != nil {

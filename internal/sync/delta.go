@@ -56,6 +56,16 @@ func (e *Engine) syncMemberships(ctx context.Context, meta *models.Metadata) err
 		return fmt.Errorf("loading memberships: %w", err)
 	}
 
+	// Purge memberships for lists that no longer exist remotely
+	for listID, repoIDs := range memberships.ListToRepos {
+		if _, exists := listsData.ByListID[listID]; !exists {
+			for _, repoID := range repoIDs {
+				memberships.RepoToLists[repoID] = removeString(memberships.RepoToLists[repoID], listID)
+			}
+			delete(memberships.ListToRepos, listID)
+		}
+	}
+
 	for listID, list := range listsData.ByListID {
 		// For delta sync, only refresh lists that changed
 		if !meta.LastSyncedAt.IsZero() {

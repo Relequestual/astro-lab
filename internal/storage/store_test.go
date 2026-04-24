@@ -158,8 +158,12 @@ func TestClear(t *testing.T) {
 	store := NewStore(dir)
 
 	// Create some files
-	store.SaveMetadata(&models.Metadata{SchemaVersion: 1})
-	store.SaveStars(&StarsData{ByRepoID: map[string]models.Repository{}})
+	if err := store.SaveMetadata(&models.Metadata{SchemaVersion: 1}); err != nil {
+		t.Fatalf("SaveMetadata: %v", err)
+	}
+	if err := store.SaveStars(&StarsData{ByRepoID: map[string]models.Repository{}}); err != nil {
+		t.Fatalf("SaveStars: %v", err)
+	}
 
 	if err := store.Clear(); err != nil {
 		t.Fatalf("clear: %v", err)

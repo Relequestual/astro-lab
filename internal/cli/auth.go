@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -52,31 +51,50 @@ func init() {
 }
 
 func runAuthLogin(cmd *cobra.Command, args []string) error {
+	// Validate flag values
+	if authMethod != "token" && authMethod != "gh" {
+		return fmt.Errorf("invalid --method %q: must be \"token\" or \"gh\"", authMethod)
+	}
+	if authStore != "keyring" && authStore != "none" {
+		return fmt.Errorf("invalid --store %q: must be \"keyring\" or \"none\"", authStore)
+	}
+
 	store := models.AuthStoreKeyring
 	if authStore == "none" {
 		store = models.AuthStoreNone
 	}
 
-	var opts []auth.ProviderOption
-	opts = append(opts, auth.WithStore(store))
-
 	if authMethod == "gh" {
-		// For gh method, resolve token from gh CLI
-		opts = append(opts, auth.WithGHBackend(&auth.DefaultGHBackendExported{}))
-		provider := auth.NewProvider(opts...)
-		token, authProv, err := provider.Resolve()
+		// For gh method, resolve token directly from gh CLI
+		ghBackend := &auth.DefaultGHBackendExported{}
+		token, err := ghBackend.Token()
 		if err != nil {
-			return fmt.Errorf("failed to authenticate via gh: %w", err)
+			return fmt.Errorf("failed to get token from gh CLI: %w", err)
 		}
 
 		// Validate token
 		client := github.NewClient(token)
-		login, err := client.ViewerLogin(context.Background())
+		login, err := client.ViewerLogin(cmd.Context())
 		if err != nil {
 			return fmt.Errorf("failed to validate token: %w", err)
 		}
 
-		fmt.Printf("✓ Authenticated via %s as %s\n", authProv, login)
+		// Store token if requested
+		if store == models.AuthStoreKeyring {
+			kb := auth.NewOSKeyring()
+			provider := auth.NewProvider(
+				auth.WithStore(store),
+				auth.WithKeyringBackend(kb),
+				auth.WithExplicitToken(token),
+			)
+			if err := provider.StoreToken(token); err != nil {
+				fmt.Fprintf(os.Stderr, "Warning: could not store token in keyring: %v\n", err)
+			} else {
+				fmt.Println("Token stored in keyring.")
+			}
+		}
+
+		fmt.Printf("✓ Authenticated via gh CLI as %s\n", login)
 		return nil
 	}
 
@@ -95,7 +113,7 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 
 	// Validate token
 	client := github.NewClient(tokenInput)
-	login, err := client.ViewerLogin(context.Background())
+	login, err := client.ViewerLogin(cmd.Context())
 	if err != nil {
 		return fmt.Errorf("invalid token: %w", err)
 	}
@@ -134,7 +152,7 @@ func runAuthStatus(cmd *cobra.Command, args []string) error {
 	}
 
 	client := github.NewClient(token)
-	login, err := client.ViewerLogin(context.Background())
+	login, err := client.ViewerLogin(cmd.Context())
 	if err != nil {
 		status := models.AuthStatus{
 			Provider:      authProv,

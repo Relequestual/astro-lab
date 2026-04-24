@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 // AtomicWrite writes data to a file atomically using temp file + rename
@@ -34,8 +35,12 @@ func AtomicWrite(path string, data []byte) error {
 		return fmt.Errorf("closing temp file: %w", err)
 	}
 
-	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("removing destination file: %w", err)
+	// On Windows, os.Rename fails if destination exists; remove it first.
+	// On POSIX, os.Rename atomically replaces the destination.
+	if runtime.GOOS == "windows" {
+		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("removing destination file: %w", err)
+		}
 	}
 
 	if err := os.Rename(tmpName, path); err != nil {

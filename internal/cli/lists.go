@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"text/tabwriter"
@@ -27,7 +26,7 @@ func runLists(cmd *cobra.Command, args []string) error {
 	}
 
 	client := github.NewClient(token)
-	lists, err := client.FetchLists(context.Background())
+	lists, err := client.FetchLists(cmd.Context())
 	if err != nil {
 		return fmt.Errorf("fetching lists: %w", err)
 	}

@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"text/tabwriter"
@@ -43,7 +42,7 @@ func runStars(cmd *cobra.Command, args []string) error {
 	}
 
 	client := github.NewClient(token)
-	stars, err := client.FetchStarredRepos(context.Background(), since)
+	stars, err := client.FetchStarredRepos(cmd.Context(), since)
 	if err != nil {
 		return fmt.Errorf("fetching stars: %w", err)
 	}

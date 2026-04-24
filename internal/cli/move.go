@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"strings"
 
@@ -53,7 +52,7 @@ func runMove(cmd *cobra.Command, args []string) error {
 	engine := mutation.NewMoveEngine(client, store)
 
 	// Plan the move
-	result, err := engine.Plan(context.Background(), repoID, repoName, moveToLists)
+	result, err := engine.Plan(cmd.Context(), repoID, repoName, moveToLists)
 	if err != nil {
 		return fmt.Errorf("planning move: %w", err)
 	}
@@ -82,7 +81,7 @@ func runMove(cmd *cobra.Command, args []string) error {
 	}
 
 	// Apply
-	result, err = engine.Apply(context.Background(), repoID, repoName, moveToLists)
+	result, err = engine.Apply(cmd.Context(), repoID, repoName, moveToLists)
 	if err != nil {
 		return fmt.Errorf("applying move: %w", err)
 	}

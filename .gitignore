@@ -1,5 +1,5 @@
 # Binaries
-astlab
+/astlab
 dist/
 *.exe
 *.dll
