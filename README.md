@@ -2,11 +2,43 @@
 
 Astrometrics Lab is a Go CLI and Bubble Tea TUI for managing GitHub stars and star lists safely.
 
-## Start Here
+## Quick Start (macOS)
 
-1. Open the build prompt in `docs/Copilot Agent build prompt.md`.
-2. Give that prompt to GitHub Copilot Agent in this repository.
-3. Build against the MVP acceptance checklist in `docs/Astrometrics Lab - feasibility and technical notes.md`.
+### Prerequisites
+
+Install Go using Homebrew:
+
+```bash
+brew install go
+```
+
+Verify the installation:
+
+```bash
+go version
+```
+
+### Build and Run
+
+Clone the repo and build:
+
+```bash
+git clone https://github.com/Relequestual/astro-lab.git
+cd astro-lab
+go build -o astlab ./cmd/astlab/
+```
+
+Run the CLI:
+
+```bash
+./astlab --help
+```
+
+### Run Tests
+
+```bash
+go test ./...
+```
 
 ## Project Docs
 
@@ -19,8 +51,3 @@ Astrometrics Lab is a Go CLI and Bubble Tea TUI for managing GitHub stars and st
 - Safe list membership updates with dry-run default.
 - Sync and full reconciliation commands.
 - Test coverage for core sync, mutation safety, and auth behavior.
-
-## Current Status
-
-Planning docs are committed.
-Implementation scaffold is next.

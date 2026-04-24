@@ -1,5 +1,6 @@
 # Binaries
 astlab
+dist/
 *.exe
 *.dll
 *.so
