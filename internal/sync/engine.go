@@ -1,0 +1,105 @@
+package sync
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/Relequestual/astro-lab/internal/github"
+	"github.com/Relequestual/astro-lab/internal/models"
+	"github.com/Relequestual/astro-lab/internal/storage"
+)
+
+// Engine handles sync operations between GitHub and local storage
+type Engine struct {
+	client *github.Client
+	store  *storage.Store
+}
+
+// NewEngine creates a new sync engine
+func NewEngine(client *github.Client, store *storage.Store) *Engine {
+	return &Engine{client: client, store: store}
+}
+
+// SyncResult contains the results of a sync operation
+type SyncResult struct {
+	NewStars     int  `json:"newStars"`
+	UpdatedLists int  `json:"updatedLists"`
+	RemovedStars int  `json:"removedStars"`
+	TotalStars   int  `json:"totalStars"`
+	TotalLists   int  `json:"totalLists"`
+	FullSync     bool `json:"fullSync"`
+}
+
+func (r SyncResult) String() string {
+	mode := "delta"
+	if r.FullSync {
+		mode = "full"
+	}
+	return fmt.Sprintf("Sync complete (%s): %d new stars, %d removed, %d lists updated. Total: %d stars, %d lists.",
+		mode, r.NewStars, r.RemovedStars, r.UpdatedLists, r.TotalStars, r.TotalLists)
+}
+
+// Delta performs an incremental sync since last sync time
+func (e *Engine) Delta(ctx context.Context) (*SyncResult, error) {
+	meta, err := e.store.LoadMetadata()
+	if err != nil {
+		return nil, fmt.Errorf("loading metadata: %w", err)
+	}
+
+	// If no previous sync, do a full sync
+	if meta.LastSyncedAt.IsZero() {
+		return e.Full(ctx)
+	}
+
+	return e.deltaSync(ctx, meta)
+}
+
+func (e *Engine) deltaSync(ctx context.Context, meta *models.Metadata) (*SyncResult, error) {
+	result := &SyncResult{}
+
+	// Fetch new stars since last sync
+	newStars, err := e.client.FetchStarredRepos(ctx, meta.LastSyncedAt)
+	if err != nil {
+		return nil, fmt.Errorf("fetching new stars: %w", err)
+	}
+
+	// Update local stars
+	starsData, err := e.store.LoadStars()
+	if err != nil {
+		return nil, fmt.Errorf("loading stars: %w", err)
+	}
+
+	for _, star := range newStars {
+		if _, exists := starsData.ByRepoID[star.ID]; !exists {
+			result.NewStars++
+		}
+		starsData.ByRepoID[star.ID] = star
+	}
+	result.TotalStars = len(starsData.ByRepoID)
+
+	if err := e.store.SaveStars(starsData); err != nil {
+		return nil, fmt.Errorf("saving stars: %w", err)
+	}
+
+	// Sync lists
+	listsResult, err := e.syncLists(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("syncing lists: %w", err)
+	}
+	result.UpdatedLists = listsResult.UpdatedLists
+	result.TotalLists = listsResult.TotalLists
+
+	// Sync memberships for changed lists
+	if err := e.syncMemberships(ctx, meta); err != nil {
+		return nil, fmt.Errorf("syncing memberships: %w", err)
+	}
+
+	// Update metadata
+	meta.LastSyncedAt = time.Now().UTC()
+	if err := e.store.SaveMetadata(meta); err != nil {
+		return nil, fmt.Errorf("saving metadata: %w", err)
+	}
+
+	return result, nil
+}

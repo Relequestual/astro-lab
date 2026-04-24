@@ -1,0 +1,134 @@
+package sync
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/Relequestual/astro-lab/internal/models"
+	"github.com/Relequestual/astro-lab/internal/storage"
+)
+
+type listsResult struct {
+	UpdatedLists int
+	TotalLists   int
+}
+
+func (e *Engine) syncLists(ctx context.Context) (*listsResult, error) {
+	remoteLists, err := e.client.FetchLists(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("fetching lists: %w", err)
+	}
+
+	localLists, err := e.store.LoadLists()
+	if err != nil {
+		return nil, fmt.Errorf("loading local lists: %w", err)
+	}
+
+	result := &listsResult{TotalLists: len(remoteLists)}
+
+	newListData := &storage.ListsData{
+		ByListID: make(map[string]models.StarList),
+	}
+
+	for _, l := range remoteLists {
+		existing, found := localLists.ByListID[l.ID]
+		if !found || existing.UpdatedAt != l.UpdatedAt || existing.ItemCount != l.ItemCount {
+			result.UpdatedLists++
+		}
+		newListData.ByListID[l.ID] = l
+	}
+
+	if err := e.store.SaveLists(newListData); err != nil {
+		return nil, fmt.Errorf("saving lists: %w", err)
+	}
+
+	return result, nil
+}
+
+func (e *Engine) syncMemberships(ctx context.Context, meta *models.Metadata) error {
+	listsData, err := e.store.LoadLists()
+	if err != nil {
+		return fmt.Errorf("loading lists: %w", err)
+	}
+
+	memberships, err := e.store.LoadMemberships()
+	if err != nil {
+		return fmt.Errorf("loading memberships: %w", err)
+	}
+
+	// Purge memberships for lists that no longer exist remotely
+	for listID, repoIDs := range memberships.ListToRepos {
+		if _, exists := listsData.ByListID[listID]; !exists {
+			for _, repoID := range repoIDs {
+				memberships.RepoToLists[repoID] = removeString(memberships.RepoToLists[repoID], listID)
+			}
+			delete(memberships.ListToRepos, listID)
+		}
+	}
+
+	for listID, list := range listsData.ByListID {
+		// For delta sync, only refresh lists that changed
+		if !meta.LastSyncedAt.IsZero() {
+			updatedBefore := list.UpdatedAt.Before(meta.LastSyncedAt)
+			addedBefore := list.LastAddedAt.IsZero() || list.LastAddedAt.Before(meta.LastSyncedAt)
+			if updatedBefore && addedBefore {
+				continue
+			}
+		}
+
+		items, err := e.client.FetchListItems(ctx, listID)
+		if err != nil {
+			return fmt.Errorf("fetching items for list %s: %w", list.Name, err)
+		}
+
+		// Update list->repo mapping
+		repoIDs := make([]string, len(items))
+		for i, item := range items {
+			repoIDs[i] = item.ID
+		}
+
+		// Remove listID from repos that are no longer in this list
+		newRepoSet := make(map[string]bool, len(repoIDs))
+		for _, id := range repoIDs {
+			newRepoSet[id] = true
+		}
+		if oldRepoIDs, ok := memberships.ListToRepos[listID]; ok {
+			for _, oldRepoID := range oldRepoIDs {
+				if !newRepoSet[oldRepoID] {
+					memberships.RepoToLists[oldRepoID] = removeString(memberships.RepoToLists[oldRepoID], listID)
+				}
+			}
+		}
+
+		memberships.ListToRepos[listID] = repoIDs
+
+		// Add listID to repos currently in the list
+		for _, repoID := range repoIDs {
+			lists := memberships.RepoToLists[repoID]
+			if !containsString(lists, listID) {
+				memberships.RepoToLists[repoID] = append(lists, listID)
+			}
+		}
+	}
+
+	return e.store.SaveMemberships(memberships)
+}
+
+func containsString(slice []string, s string) bool {
+	for _, v := range slice {
+		if v == s {
+			return true
+		}
+	}
+	return false
+}
+
+func removeString(slice []string, s string) []string {
+	result := make([]string, 0, len(slice))
+	for _, v := range slice {
+		if v != s {
+			result = append(result, v)
+		}
+	}
+	return result
+}
