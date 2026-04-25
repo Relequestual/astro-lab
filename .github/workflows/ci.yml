@@ -10,8 +10,46 @@ permissions:
   contents: read
 
 jobs:
-  build-and-test:
+  test:
+    # Disabled while the repo is private. Remove this line to enable CI.
+    if: false
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Test
+        run: go test ./...
+
+  build:
+    # Disabled while the repo is private. Remove this line to enable CI.
+    if: false
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            artifact: astlab-linux-amd64
+            binary: astlab
+          - goos: windows
+            goarch: amd64
+            artifact: astlab-windows-amd64
+            binary: astlab.exe
+          - goos: darwin
+            goarch: amd64
+            artifact: astlab-darwin-amd64
+            binary: astlab
+          - goos: darwin
+            goarch: arm64
+            artifact: astlab-darwin-arm64
+            binary: astlab
     steps:
       - uses: actions/checkout@v4
 
@@ -24,15 +62,12 @@ jobs:
 
       - name: Build
         env:
-          GOOS: linux
-          GOARCH: amd64
-        run: go build -o astlab ./cmd/astlab/
-
-      - name: Test
-        run: go test ./...
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: go build -o ${{ matrix.binary }} ./cmd/astlab/
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: astlab-linux-amd64
-          path: astlab
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.binary }}
