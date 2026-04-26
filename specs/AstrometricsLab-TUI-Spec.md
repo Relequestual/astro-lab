@@ -19,7 +19,7 @@ Design and implement a highly interactive Bubble Tea-based terminal UI for manag
   2. **Lists Panel** – shows all user lists; filterable and supports creation/renaming/deletion.
   3. **Repos-in-List Panel** – shows all repos in a selected list.
   4. **Repo Detail View** – shows full details for a single repository, actions, and metadata.
-  5. **All Stars (Unorganised)** – shows all starred repositories, with rich repo metadata and filter/sort controls.
+  5. **All Stars (Unorganized)** – shows all starred repositories, with rich repo metadata and filter/sort controls.
 - **Layout Options**:
   - Both split-pane and full-screen navigation should be supported.  
   - Implementation should use established UI best practices and principles to determine the best default, and adapt as the project evolves.
@@ -32,13 +32,13 @@ Design and implement a highly interactive Bubble Tea-based terminal UI for manag
   - Browse, create, rename, and delete lists.  
   - Deleting lists must trigger an explicit "are you sure?" warning.
 - **Repo Organization:**  
-  - View, search, and filter repos in any list or unorganised repos.
+  - View, search, and filter repos in any list or unorganized repos.
   - Add a repo to one or more lists (multi-select target lists).
   - Remove repos from lists.
   - Move repos between lists (with the ability to add to multiple).
   - Batch operations are fully supported.
 - **Sync:**  
-  - Manual sync from within the TUI (`s` or onscreen button); progress is indicated non-blockingly. UI remains responsive.
+  - Manual sync from within the TUI (`s` or onscreen button); progress is indicated in a non-blocking way. UI remains responsive.
 - **Dry-Run Workflow:**  
   - All modifying actions (list/repo changes) produce a dry-run/preview panel showing the *exact* effects before user confirmation. User must explicitly confirm or cancel.
 - **Undo:**  
@@ -60,7 +60,7 @@ Design and implement a highly interactive Bubble Tea-based terminal UI for manag
 - The visual "feel" should make management easy even with hundreds/thousands of stars.
 - No explicit color palette required at this time; use good defaults and respect terminal themes where possible.
 - Strive for the UX coherence and delight of `lazygit` with the visual clarity/niceness of `superfile` (Charmbracelet's Superfile project).
-- Use Bubbletea, Bubbles, and Lipgloss for appearance and interaction.
+- Use Bubble Tea (`bubbletea`), Bubbles, and Lip Gloss (`lipgloss`) for appearance and interaction.
 - Persistent context bar (header/footer) with:
   - Logged-in user
   - GitHub rate limit info
@@ -89,7 +89,7 @@ Design and implement a highly interactive Bubble Tea-based terminal UI for manag
 - Heavily comment data-fetch, dry-run, and sync logic to ensure testability and future expansion.
 - Prioritize accessibility and usability: ensure clear focus and feedback for all TUI actions.
 - Write all new code in idiomatic Go and project style.
-- Place all new Bubbletea code in `internal/tui/`, but refactor/divide by screen/component as complexity grows.
+- Place all new Bubble Tea code in `internal/tui/`, but refactor/divide by screen/component as complexity grows.
 - Keep this spec up to date as further questions are resolved or additional requirements emerge.
 
 ---
