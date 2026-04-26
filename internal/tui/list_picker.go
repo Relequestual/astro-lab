@@ -137,7 +137,9 @@ func (m listPickerModel) View() string {
 	b.WriteString("\n" + mutedStyle.Render("Space toggle • Enter confirm • Esc cancel"))
 
 	maxW := m.width - 4
-	if maxW > 50 || maxW < 30 {
+	if maxW < 30 {
+		maxW = 30
+	} else if maxW > 50 {
 		maxW = 50
 	}
 	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Center,
