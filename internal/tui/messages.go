@@ -101,6 +101,9 @@ type navigateMsg struct {
 
 type errMsg struct{ err error }
 
+// backMsg requests navigation to the previous screen (handled by root model).
+type backMsg struct{}
+
 func (e errMsg) Error() string {
 	if e.err != nil {
 		return e.err.Error()

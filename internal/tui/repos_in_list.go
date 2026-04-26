@@ -44,9 +44,9 @@ func (m reposInListModel) Update(msg tea.Msg) (reposInListModel, tea.Cmd) {
 				if r, ok := m.stars.selectedRepo(); ok {
 					rid := r.ID
 					rname := r.NameWithOwner
-					lid := m.listID
+					lname := m.listName
 					return m, func() tea.Msg {
-						return showListPickerMsg{repoID: rid, repoName: rname + " (remove from " + lid + ")"}
+						return showListPickerMsg{repoID: rid, repoName: rname + " (remove from " + lname + ")"}
 					}
 				}
 			}

@@ -269,7 +269,7 @@ func helpView(width, height int) string {
 		}},
 		{"Repo Detail", []KeyBinding{
 			{Key: "esc", Desc: "Back"},
-			{Key: "o", Desc: "Open URL"},
+			{Key: "o", Desc: "Copy URL"},
 			{Key: "a", Desc: "Add to list"},
 		}},
 	}

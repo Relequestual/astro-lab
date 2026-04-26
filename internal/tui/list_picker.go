@@ -35,7 +35,9 @@ func (m *listPickerModel) show(repoID, repoName string, lists []models.StarList,
 	m.repoName = repoName
 	m.lists = lists
 	m.cursor = 0
-	m.previousIDs = currentListIDs
+	// Copy to avoid aliasing the shared membership slice
+	m.previousIDs = make([]string, len(currentListIDs))
+	copy(m.previousIDs, currentListIDs)
 	m.checked = make(map[string]bool, len(currentListIDs))
 	for _, id := range currentListIDs {
 		m.checked[id] = true
@@ -74,10 +76,11 @@ func (m listPickerModel) Update(msg tea.Msg) (listPickerModel, tea.Cmd) {
 				}
 			}
 		case "enter":
+			// Build selected IDs in stable list order
 			selected := make([]string, 0, len(m.checked))
-			for id, on := range m.checked {
-				if on {
-					selected = append(selected, id)
+			for _, l := range m.lists {
+				if m.checked[l.ID] {
+					selected = append(selected, l.ID)
 				}
 			}
 			rid := m.repoID

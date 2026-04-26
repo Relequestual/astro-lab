@@ -2,6 +2,7 @@ package tui
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -87,11 +88,11 @@ func (m *Model) SetProgram(p *tea.Program) {
 	m.program = p
 }
 
-func (m Model) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return tea.Batch(resolveAuthCmd(m.authProv), m.authScreen.Init())
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 
 	switch msg := msg.(type) {
@@ -185,7 +186,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		ctx, cancel := context.WithCancel(context.Background())
 		m.syncOverlay.start(cancel)
 		cmds = append(cmds, m.syncOverlay.Init())
-		cmds = append(cmds, makeSyncCmd(m.token, m.store, msg.full, ctx))
+		cmds = append(cmds, makeSyncCmd(m.token, m.store, msg.full, ctx, m.program))
 		return m, tea.Batch(cmds...)
 
 	case syncProgressMsg:
@@ -196,6 +197,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case syncCompleteMsg:
 		m.syncOverlay.stop()
 		if msg.err != nil {
+			// Distinguish cancellation from real errors
+			if errors.Is(msg.err, context.Canceled) || errors.Is(msg.err, context.DeadlineExceeded) {
+				m.statusText = "Sync cancelled"
+				m.statusIsError = false
+				return m, nil
+			}
 			m.statusText = fmt.Sprintf("Sync failed: %s", msg.err)
 			m.statusIsError = true
 			return m, nil
@@ -308,6 +315,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.statusIsError = true
 		return m, nil
 
+	case backMsg:
+		return m, m.navigateBack()
+
 	case tea.KeyMsg:
 		// Overlay priority: sync overlay absorbs esc
 		if m.syncOverlay.active {
@@ -406,7 +416,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return updated, tea.Batch(cmds...)
 }
 
-func (m Model) View() string {
+func (m *Model) View() string {
 	if m.quitting {
 		return "Goodbye!\n"
 	}
@@ -453,7 +463,7 @@ func (m Model) View() string {
 }
 
 // updateActiveScreen delegates a message to the currently active screen.
-func (m Model) updateActiveScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) updateActiveScreen(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch m.screen {
 	case ScreenAuth:
@@ -517,7 +527,9 @@ func (m *Model) handleUndo() tea.Cmd {
 		if memberships != nil {
 			updateLocalMemberships(memberships, repoID, prevIDs)
 			if store != nil {
-				_ = store.SaveMemberships(memberships)
+				if err := store.SaveMemberships(memberships); err != nil {
+					return undoResultMsg{description: desc, err: fmt.Errorf("reverted remotely but failed to save locally: %w", err)}
+				}
 			}
 		}
 		return undoResultMsg{description: desc}
@@ -650,7 +662,13 @@ func executeMutationCmd(client *github.Client, store *storage.Store, memberships
 		if memberships != nil {
 			updateLocalMemberships(memberships, repoID, newListIDs)
 			if store != nil {
-				_ = store.SaveMemberships(memberships)
+				if err := store.SaveMemberships(memberships); err != nil {
+					return updateListsResultMsg{
+						repoID:   repoID,
+						repoName: repoName,
+						err:      fmt.Errorf("updated lists remotely but failed to save memberships locally: %w", err),
+					}
+				}
 			}
 		}
 		return updateListsResultMsg{repoID: repoID, repoName: repoName}
@@ -687,19 +705,27 @@ func deleteListCmd(client *github.Client, listID string) tea.Msg {
 	return statusMsg{text: "Deleted list – sync to refresh"}
 }
 
-// makeSyncCmd creates a tea.Cmd that runs a sync operation with a cancellable context.
-func makeSyncCmd(token string, store *storage.Store, full bool, ctx context.Context) tea.Cmd {
+// makeSyncCmd creates a tea.Cmd that runs a sync operation with progress reporting and a cancellable context.
+func makeSyncCmd(token string, store *storage.Store, full bool, ctx context.Context, program *tea.Program) tea.Cmd {
 	return func() tea.Msg {
 		client := github.NewClient(token)
 		engine := syncpkg.NewEngine(client, store)
+
+		// Wire progress updates through tea.Program.Send so the UI updates in real time
+		var onProgress syncpkg.SyncProgressFunc
+		if program != nil {
+			onProgress = func(p syncpkg.SyncProgress) {
+				program.Send(syncProgressMsg{progress: p})
+			}
+		}
 
 		var result *syncpkg.SyncResult
 		var err error
 
 		if full {
-			result, err = engine.Full(ctx, nil)
+			result, err = engine.Full(ctx, onProgress)
 		} else {
-			result, err = engine.Delta(ctx, nil)
+			result, err = engine.Delta(ctx, onProgress)
 		}
 
 		return syncCompleteMsg{result: result, err: err}
@@ -713,7 +739,7 @@ func Run() error {
 		auth.WithKeyringBackend(auth.NewOSKeyring()),
 	)
 	m := NewModel(store, authProv)
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	p := tea.NewProgram(&m, tea.WithAltScreen())
 	m.SetProgram(p)
 	_, err := p.Run()
 	return err

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
 
 	"github.com/Relequestual/astro-lab/internal/models"
@@ -18,7 +19,7 @@ type detailModel struct {
 	actionIndex int
 }
 
-var detailActions = []string{"Add to list (a)", "Open URL (o)", "Back (esc)"}
+var detailActions = []string{"Add to list (a)", "Copy URL (o)", "Back (esc)"}
 
 func newDetailModel(repo models.Repository, listNames []string) detailModel {
 	return detailModel{
@@ -47,15 +48,15 @@ func (m detailModel) Update(msg tea.Msg) (detailModel, tea.Cmd) {
 				return showListPickerMsg{repoID: m.repo.ID, repoName: m.repo.NameWithOwner}
 			}
 		case "o":
-			// Open URL — this would need the browser opener in the root model.
-			// We emit a status message; actual open is handled by the parent.
+			url := m.repo.URL
 			return m, func() tea.Msg {
-				return statusMsg{text: "Open: " + m.repo.URL}
+				if err := clipboard.WriteAll(url); err != nil {
+					return statusMsg{text: "Copied URL: " + url + " (clipboard unavailable)"}
+				}
+				return statusMsg{text: "Copied to clipboard: " + url}
 			}
 		case "esc":
-			return m, func() tea.Msg {
-				return navigateMsg{screen: ScreenDashboard}
-			}
+			return m, func() tea.Msg { return backMsg{} }
 		case "enter":
 			switch m.actionIndex {
 			case 0:
@@ -63,13 +64,15 @@ func (m detailModel) Update(msg tea.Msg) (detailModel, tea.Cmd) {
 					return showListPickerMsg{repoID: m.repo.ID, repoName: m.repo.NameWithOwner}
 				}
 			case 1:
+				url := m.repo.URL
 				return m, func() tea.Msg {
-					return statusMsg{text: "Open: " + m.repo.URL}
+					if err := clipboard.WriteAll(url); err != nil {
+						return statusMsg{text: "Copied URL: " + url + " (clipboard unavailable)"}
+					}
+					return statusMsg{text: "Copied to clipboard: " + url}
 				}
 			case 2:
-				return m, func() tea.Msg {
-					return navigateMsg{screen: ScreenDashboard}
-				}
+				return m, func() tea.Msg { return backMsg{} }
 			}
 		}
 	}

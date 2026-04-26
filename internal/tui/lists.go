@@ -2,6 +2,7 @@ package tui
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -45,6 +46,10 @@ func newListsModel() listsModel {
 }
 
 func (m *listsModel) setLists(lists []models.StarList) {
+	// Sort by name for stable ordering (lists come from a map)
+	sort.Slice(lists, func(i, j int) bool {
+		return lists[i].Name < lists[j].Name
+	})
 	m.lists = lists
 	m.applyFilter()
 }

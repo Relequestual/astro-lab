@@ -78,27 +78,63 @@ func (m *starsModel) sortAndFilter() {
 		result = append(result, r)
 	}
 
-	// Sort
+	// Sort using 3-way comparison with tie-breaker for stable ordering
 	col := m.sortCol
 	asc := m.sortAsc
 	sort.Slice(result, func(i, j int) bool {
-		var less bool
+		var cmp int
 		switch col {
 		case sortByLanguage:
-			less = result[i].Language < result[j].Language
+			switch {
+			case result[i].Language < result[j].Language:
+				cmp = -1
+			case result[i].Language > result[j].Language:
+				cmp = 1
+			}
 		case sortByStars:
-			less = result[i].StargazerCount < result[j].StargazerCount
+			switch {
+			case result[i].StargazerCount < result[j].StargazerCount:
+				cmp = -1
+			case result[i].StargazerCount > result[j].StargazerCount:
+				cmp = 1
+			}
 		case sortByForks:
-			less = result[i].ForkCount < result[j].ForkCount
+			switch {
+			case result[i].ForkCount < result[j].ForkCount:
+				cmp = -1
+			case result[i].ForkCount > result[j].ForkCount:
+				cmp = 1
+			}
 		case sortByDate:
-			less = result[i].StarredAt.Before(result[j].StarredAt)
+			switch {
+			case result[i].StarredAt.Before(result[j].StarredAt):
+				cmp = -1
+			case result[j].StarredAt.Before(result[i].StarredAt):
+				cmp = 1
+			}
 		default:
-			less = result[i].NameWithOwner < result[j].NameWithOwner
+			switch {
+			case result[i].NameWithOwner < result[j].NameWithOwner:
+				cmp = -1
+			case result[i].NameWithOwner > result[j].NameWithOwner:
+				cmp = 1
+			}
 		}
-		if !asc {
-			less = !less
+
+		// Tie-breaker by name for stable ordering
+		if cmp == 0 {
+			switch {
+			case result[i].NameWithOwner < result[j].NameWithOwner:
+				cmp = -1
+			case result[i].NameWithOwner > result[j].NameWithOwner:
+				cmp = 1
+			}
 		}
-		return less
+
+		if asc {
+			return cmp < 0
+		}
+		return cmp > 0
 	})
 
 	m.filtered = result
@@ -293,8 +329,12 @@ func (m starsModel) RenderTable(title string, width, height int) string {
 		lang := fmt.Sprintf("%-10s", truncate(r.Language, 10))
 		stars := fmt.Sprintf("%5d⭐", r.StargazerCount)
 		forks := fmt.Sprintf("%4d🍴", r.ForkCount)
+		date := "          "
+		if !r.StarredAt.IsZero() {
+			date = r.StarredAt.Format("2006-01-02")
+		}
 
-		line := fmt.Sprintf("%-*s %s %s %s %s", nameW, name, desc, lang, stars, forks)
+		line := fmt.Sprintf("%-*s %s %s %s %s %s", nameW, name, desc, lang, stars, forks, date)
 		if i == m.cursor {
 			b.WriteString(prefix + selectedStyle.Render(line) + "\n")
 		} else {
