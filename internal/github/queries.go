@@ -363,6 +363,78 @@ func (c *Client) FetchListItems(ctx context.Context, listID string, onProgress P
 	return allItems, nil
 }
 
+// CreateList creates a new user star list via the GitHub GraphQL API.
+func (c *Client) CreateList(ctx context.Context, name, description string, isPrivate bool) (*models.StarList, error) {
+	resp, err := c.DoWithRetry(ctx, GraphQLRequest{
+		Query: `mutation CreateList($input: CreateUserListInput!) {
+			createUserList(input: $input) {
+				list { id name slug description isPrivate updatedAt }
+			}
+		}`,
+		Variables: map[string]interface{}{
+			"input": map[string]interface{}{
+				"name": name, "description": description, "isPrivate": isPrivate,
+			},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating list: %w", err)
+	}
+
+	var data struct {
+		CreateUserList struct {
+			List struct {
+				ID          string    `json:"id"`
+				Name        string    `json:"name"`
+				Slug        string    `json:"slug"`
+				Description string    `json:"description"`
+				IsPrivate   bool      `json:"isPrivate"`
+				UpdatedAt   time.Time `json:"updatedAt"`
+			} `json:"list"`
+		} `json:"createUserList"`
+	}
+	if err := json.Unmarshal(resp.Data, &data); err != nil {
+		return nil, fmt.Errorf("parsing create list response: %w", err)
+	}
+	l := data.CreateUserList.List
+	return &models.StarList{
+		ID: l.ID, Name: l.Name, Slug: l.Slug,
+		IsPrivate: l.IsPrivate, UpdatedAt: l.UpdatedAt,
+	}, nil
+}
+
+// UpdateList renames a user star list.
+func (c *Client) UpdateList(ctx context.Context, listID, name string) error {
+	_, err := c.DoWithRetry(ctx, GraphQLRequest{
+		Query: `mutation UpdateList($input: UpdateUserListInput!) {
+			updateUserList(input: $input) { list { id name } }
+		}`,
+		Variables: map[string]interface{}{
+			"input": map[string]interface{}{"listId": listID, "name": name},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("updating list: %w", err)
+	}
+	return nil
+}
+
+// DeleteList deletes a user star list.
+func (c *Client) DeleteList(ctx context.Context, listID string) error {
+	_, err := c.DoWithRetry(ctx, GraphQLRequest{
+		Query: `mutation DeleteList($input: DeleteUserListInput!) {
+			deleteUserList(input: $input) { user { login } }
+		}`,
+		Variables: map[string]interface{}{
+			"input": map[string]interface{}{"listId": listID},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("deleting list: %w", err)
+	}
+	return nil
+}
+
 // UpdateUserListsForItem sets the list memberships for a repository
 func (c *Client) UpdateUserListsForItem(ctx context.Context, itemID string, listIDs []string) error {
 	ids := make([]interface{}, len(listIDs))
