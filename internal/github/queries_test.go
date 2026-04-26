@@ -102,7 +102,10 @@ func TestParseStarredReposResponse(t *testing.T) {
                             "id": "R_123",
                             "nameWithOwner": "charmbracelet/bubbletea",
                             "description": "A TUI framework",
-                            "url": "https://github.com/charmbracelet/bubbletea"
+                            "url": "https://github.com/charmbracelet/bubbletea",
+                            "primaryLanguage": {"name": "Go"},
+                            "stargazerCount": 25000,
+                            "forkCount": 1200
                         }
                     }
                 ],
@@ -120,10 +123,15 @@ func TestParseStarredReposResponse(t *testing.T) {
 				Edges []struct {
 					StarredAt time.Time `json:"starredAt"`
 					Node      struct {
-						ID            string `json:"id"`
-						NameWithOwner string `json:"nameWithOwner"`
-						Description   string `json:"description"`
-						URL           string `json:"url"`
+						ID             string `json:"id"`
+						NameWithOwner  string `json:"nameWithOwner"`
+						Description    string `json:"description"`
+						URL            string `json:"url"`
+						PrimaryLanguage struct {
+							Name string `json:"name"`
+						} `json:"primaryLanguage"`
+						StargazerCount int `json:"stargazerCount"`
+						ForkCount      int `json:"forkCount"`
 					} `json:"node"`
 				} `json:"edges"`
 				PageInfo struct {
@@ -146,6 +154,15 @@ func TestParseStarredReposResponse(t *testing.T) {
 	if edges[0].Node.NameWithOwner != "charmbracelet/bubbletea" {
 		t.Errorf("nameWithOwner: got %q", edges[0].Node.NameWithOwner)
 	}
+	if edges[0].Node.PrimaryLanguage.Name != "Go" {
+		t.Errorf("primaryLanguage.name: got %q want %q", edges[0].Node.PrimaryLanguage.Name, "Go")
+	}
+	if edges[0].Node.StargazerCount != 25000 {
+		t.Errorf("stargazerCount: got %d want %d", edges[0].Node.StargazerCount, 25000)
+	}
+	if edges[0].Node.ForkCount != 1200 {
+		t.Errorf("forkCount: got %d want %d", edges[0].Node.ForkCount, 1200)
+	}
 	if !data.Viewer.StarredRepositories.PageInfo.HasNextPage {
 		t.Error("expected hasNextPage to be true")
 	}
@@ -160,7 +177,10 @@ func TestParseListItemsResponse(t *testing.T) {
                         "id": "R_456",
                         "nameWithOwner": "golang/go",
                         "description": "The Go programming language",
-                        "url": "https://github.com/golang/go"
+                        "url": "https://github.com/golang/go",
+                        "primaryLanguage": {"name": "Go"},
+                        "stargazerCount": 120000,
+                        "forkCount": 17000
                     }
                 ],
                 "pageInfo": {
@@ -175,8 +195,15 @@ func TestParseListItemsResponse(t *testing.T) {
 		Node struct {
 			Items struct {
 				Nodes []struct {
-					ID            string `json:"id"`
-					NameWithOwner string `json:"nameWithOwner"`
+					ID             string `json:"id"`
+					NameWithOwner  string `json:"nameWithOwner"`
+					Description    string `json:"description"`
+					URL            string `json:"url"`
+					PrimaryLanguage struct {
+						Name string `json:"name"`
+					} `json:"primaryLanguage"`
+					StargazerCount int `json:"stargazerCount"`
+					ForkCount      int `json:"forkCount"`
 				} `json:"nodes"`
 				PageInfo struct {
 					HasNextPage bool `json:"hasNextPage"`
@@ -192,7 +219,17 @@ func TestParseListItemsResponse(t *testing.T) {
 	if len(data.Node.Items.Nodes) != 1 {
 		t.Fatalf("expected 1 item, got %d", len(data.Node.Items.Nodes))
 	}
-	if data.Node.Items.Nodes[0].ID != "R_456" {
-		t.Errorf("id: got %q", data.Node.Items.Nodes[0].ID)
+	node := data.Node.Items.Nodes[0]
+	if node.ID != "R_456" {
+		t.Errorf("id: got %q", node.ID)
+	}
+	if node.PrimaryLanguage.Name != "Go" {
+		t.Errorf("primaryLanguage.name: got %q want %q", node.PrimaryLanguage.Name, "Go")
+	}
+	if node.StargazerCount != 120000 {
+		t.Errorf("stargazerCount: got %d want %d", node.StargazerCount, 120000)
+	}
+	if node.ForkCount != 17000 {
+		t.Errorf("forkCount: got %d want %d", node.ForkCount, 17000)
 	}
 }

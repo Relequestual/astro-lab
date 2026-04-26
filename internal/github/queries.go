@@ -186,6 +186,9 @@ func (c *Client) FetchStarredRepos(ctx context.Context, since time.Time, onProgr
                                 nameWithOwner
                                 description
                                 url
+                                primaryLanguage { name }
+                                stargazerCount
+                                forkCount
                             }
                         }
                         pageInfo {
@@ -208,10 +211,15 @@ func (c *Client) FetchStarredRepos(ctx context.Context, since time.Time, onProgr
 					Edges      []struct {
 						StarredAt time.Time `json:"starredAt"`
 						Node      struct {
-							ID            string `json:"id"`
-							NameWithOwner string `json:"nameWithOwner"`
-							Description   string `json:"description"`
-							URL           string `json:"url"`
+							ID             string `json:"id"`
+							NameWithOwner  string `json:"nameWithOwner"`
+							Description    string `json:"description"`
+							URL            string `json:"url"`
+							PrimaryLanguage struct {
+								Name string `json:"name"`
+							} `json:"primaryLanguage"`
+							StargazerCount int `json:"stargazerCount"`
+							ForkCount      int `json:"forkCount"`
 						} `json:"node"`
 					} `json:"edges"`
 					PageInfo struct {
@@ -232,11 +240,14 @@ func (c *Client) FetchStarredRepos(ctx context.Context, since time.Time, onProgr
 				break
 			}
 			allRepos = append(allRepos, models.Repository{
-				ID:            e.Node.ID,
-				NameWithOwner: e.Node.NameWithOwner,
-				StarredAt:     e.StarredAt,
-				Description:   e.Node.Description,
-				URL:           e.Node.URL,
+				ID:             e.Node.ID,
+				NameWithOwner:  e.Node.NameWithOwner,
+				StarredAt:      e.StarredAt,
+				Description:    e.Node.Description,
+				URL:            e.Node.URL,
+				Language:       e.Node.PrimaryLanguage.Name,
+				StargazerCount: e.Node.StargazerCount,
+				ForkCount:      e.Node.ForkCount,
 			})
 		}
 
@@ -279,6 +290,9 @@ func (c *Client) FetchListItems(ctx context.Context, listID string, onProgress P
                                     nameWithOwner
                                     description
                                     url
+                                    primaryLanguage { name }
+                                    stargazerCount
+                                    forkCount
                                 }
                             }
                             pageInfo {
@@ -300,10 +314,15 @@ func (c *Client) FetchListItems(ctx context.Context, listID string, onProgress P
 				Items struct {
 					TotalCount int `json:"totalCount"`
 					Nodes      []struct {
-						ID            string `json:"id"`
-						NameWithOwner string `json:"nameWithOwner"`
-						Description   string `json:"description"`
-						URL           string `json:"url"`
+						ID             string `json:"id"`
+						NameWithOwner  string `json:"nameWithOwner"`
+						Description    string `json:"description"`
+						URL            string `json:"url"`
+						PrimaryLanguage struct {
+							Name string `json:"name"`
+						} `json:"primaryLanguage"`
+						StargazerCount int `json:"stargazerCount"`
+						ForkCount      int `json:"forkCount"`
 					} `json:"nodes"`
 					PageInfo struct {
 						EndCursor   string `json:"endCursor"`
@@ -321,10 +340,13 @@ func (c *Client) FetchListItems(ctx context.Context, listID string, onProgress P
 				continue // skip non-repository items
 			}
 			allItems = append(allItems, models.Repository{
-				ID:            n.ID,
-				NameWithOwner: n.NameWithOwner,
-				Description:   n.Description,
-				URL:           n.URL,
+				ID:             n.ID,
+				NameWithOwner:  n.NameWithOwner,
+				Description:    n.Description,
+				URL:            n.URL,
+				Language:       n.PrimaryLanguage.Name,
+				StargazerCount: n.StargazerCount,
+				ForkCount:      n.ForkCount,
 			})
 		}
 
