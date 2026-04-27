@@ -15,7 +15,9 @@ const (
 	frameCount      = 10
 	frameInterval   = 280 * time.Millisecond
 	// frameWidth is the visual width of every rendered row before centering.
-	frameWidth      = 64
+	// 65 is odd so the hex is perfectly symmetric: 6 leading = 6 trailing spaces
+	// on wall rows, and the centre trace lands on col 32 = (65-1)/2 exactly.
+	frameWidth      = 65
 	// defaultTermWidth is used when terminal width cannot be detected.
 	defaultTermWidth = 80
 )
@@ -65,33 +67,33 @@ func (m Model) View() string {
 // buildFrame composes the styled ASCII art for frame f, centering it within
 // termWidth columns.
 //
-// Hexagon geometry (frameWidth=64 visual cols × 21 rows before centering):
+// Hexagon geometry (frameWidth=65 visual cols × 21 rows before centering):
 //
 //	row 0  : blank / sparkles
-//	row 1  :           /─────────────────────────────────────────\
-//	row 2  :          /                                           \
-//	row 3  :         /                                             \
-//	row 4  :        /                                               \
-//	row 5  :       /                                                 \
-//	row 6  :      /                                                   \
-//	row 7  :      |                      [wall]                       |
-//	row 8  :      |            ·────────────┼────────────·            |
-//	row 9  :      |            ·            │            ·            |
-//	row 10 :      |  ──── · ──── · ──── · ────★──── · ──── · ──── · ──  |  ← star
-//	row 11 :      |            ·            │            ·            |
-//	row 12 :      |            ·────────────┼────────────·            |
-//	row 13 :      |                      [wall]                       |
-//	row 14 :      \                                                   /
-//	row 15 :       \                                                 /
-//	row 16 :        \                                               /
-//	row 17 :         \                                             /
-//	row 18 :          \                                           /
-//	row 19 :           \─────────────────────────────────────────/
+//	row 1  :            /─────────────────────────────────────────\
+//	row 2  :           /                                           \
+//	row 3  :          /                                             \
+//	row 4  :         /                                               \
+//	row 5  :        /                                                 \
+//	row 6  :       /                                                   \
+//	row 7  :       |                      [wall]                       |
+//	row 8  :       |            ·────────────┼────────────·            |
+//	row 9  :       |            ·            │            ·            |
+//	row 10 :       |  ──── · ──── · ──── · ────★──── · ──── · ──── · ──  |  ← star
+//	row 11 :       |            ·            │            ·            |
+//	row 12 :       |            ·────────────┼────────────·            |
+//	row 13 :       |                      [wall]                       |
+//	row 14 :       \                                                   /
+//	row 15 :        \                                                 /
+//	row 16 :         \                                               /
+//	row 17 :          \                                             /
+//	row 18 :           \                                           /
+//	row 19 :            \─────────────────────────────────────────/
 //	row 20 : blank / sparkles
 //
-// Left wall | at col 5, right wall | at col 57. Centre col = 31.
-// Top/bottom bar /…\ sit in the same row as the first/last corner chars so
-// every corner is seamlessly connected.
+// Left wall | at col 6, right wall | at col 58. Centre col = 32.
+// Frame is 65 cols wide (odd): every wall row has 6 leading = 6 trailing spaces,
+// so the hex is perfectly symmetric and the centre trace is at the exact mid-col.
 func buildFrame(f, termWidth int) string {
 	H := hexSt.Render
 	T := traceSt.Render
@@ -101,82 +103,82 @@ func buildFrame(f, termWidth int) string {
 
 	empty := strings.Repeat(" ", frameWidth)
 
-	// ── plain hex rows (each row is exactly frameWidth=64 visual cols) ─────────
+	// ── plain hex rows (each row is exactly frameWidth=65 visual cols) ─────────
 	//
-	// Top bar: / at col 10, 41 underscores, \ at col 52 → 10+(1+41+1)+11 = 64
-	hexTopBar := "          " + H("/"+strings.Repeat("_", 41)+"\\") + "           "
+	// Top bar: / at col 11, 41 underscores, \ at col 53 → 11+(1+41+1)+11 = 65
+	hexTopBar := "           " + H("/"+strings.Repeat("_", 41)+"\\") + "           "
 	// Five diagonal rows (top): / moves left one col per row, \ moves right.
-	diagA1 := "         " + H("/") + strings.Repeat(" ", 43) + H("\\") + "          " // 9+1+43+1+10=64
-	diagA2 := "        " + H("/") + strings.Repeat(" ", 45) + H("\\") + "         "  // 8+1+45+1+9=64
-	diagA3 := "       " + H("/") + strings.Repeat(" ", 47) + H("\\") + "        "   // 7+1+47+1+8=64
-	diagA4 := "      " + H("/") + strings.Repeat(" ", 49) + H("\\") + "       "    // 6+1+49+1+7=64
-	diagA5 := "     " + H("/") + strings.Repeat(" ", 51) + H("\\") + "      "     // 5+1+51+1+6=64
-	// Wall rows: | at col 5 and col 57, interior 51 chars.
-	wallPlain := "     " + H("|") + strings.Repeat(" ", 51) + H("|") + "      " // 5+1+51+1+6=64
+	diagA1 := "          " + H("/") + strings.Repeat(" ", 43) + H("\\") + "          " // 10+1+43+1+10=65
+	diagA2 := "         " + H("/") + strings.Repeat(" ", 45) + H("\\") + "         "  // 9+1+45+1+9=65
+	diagA3 := "        " + H("/") + strings.Repeat(" ", 47) + H("\\") + "        "   // 8+1+47+1+8=65
+	diagA4 := "       " + H("/") + strings.Repeat(" ", 49) + H("\\") + "       "    // 7+1+49+1+7=65
+	diagA5 := "      " + H("/") + strings.Repeat(" ", 51) + H("\\") + "      "     // 6+1+51+1+6=65
+	// Wall rows: | at col 6 and col 58, interior 51 chars.
+	wallPlain := "      " + H("|") + strings.Repeat(" ", 51) + H("|") + "      " // 6+1+51+1+6=65
 	// Five diagonal rows (bottom): \ moves right per row, / moves left.
-	diagB5 := "     " + H("\\") + strings.Repeat(" ", 51) + H("/") + "      "     // 5+1+51+1+6=64
-	diagB4 := "      " + H("\\") + strings.Repeat(" ", 49) + H("/") + "       "    // 6+1+49+1+7=64
-	diagB3 := "       " + H("\\") + strings.Repeat(" ", 47) + H("/") + "        "   // 7+1+47+1+8=64
-	diagB2 := "        " + H("\\") + strings.Repeat(" ", 45) + H("/") + "         "  // 8+1+45+1+9=64
-	diagB1 := "         " + H("\\") + strings.Repeat(" ", 43) + H("/") + "          " // 9+1+43+1+10=64
-	// Bottom bar: \ at col 10, 41 underscores, / at col 52 → 10+(1+41+1)+11 = 64
-	hexBotBar := "          " + H("\\"+strings.Repeat("_", 41)+"/") + "           "
+	diagB5 := "      " + H("\\") + strings.Repeat(" ", 51) + H("/") + "      "     // 6+1+51+1+6=65
+	diagB4 := "       " + H("\\") + strings.Repeat(" ", 49) + H("/") + "       "    // 7+1+49+1+7=65
+	diagB3 := "        " + H("\\") + strings.Repeat(" ", 47) + H("/") + "        "   // 8+1+47+1+8=65
+	diagB2 := "         " + H("\\") + strings.Repeat(" ", 45) + H("/") + "         "  // 9+1+45+1+9=65
+	diagB1 := "          " + H("\\") + strings.Repeat(" ", 43) + H("/") + "          " // 10+1+43+1+10=65
+	// Bottom bar: \ at col 11, 41 underscores, / at col 53 → 11+(1+41+1)+11 = 65
+	hexBotBar := "           " + H("\\"+strings.Repeat("_", 41)+"/") + "           "
 
-	// ── diagonal rows with centre vertical trace (· or │ at col 31) ───────────
-	// col 31 is the visual centre; spaces on each side are adjusted per row.
-	// diagA1v: / at 9, · at 31, \ at 53 → 9+1+21+1+21+1+10=64
-	diagA1v := "         " + H("/") + strings.Repeat(" ", 21) + T("·") + strings.Repeat(" ", 21) + H("\\") + "          "
-	// diagA2v: / at 8, │ at 31, \ at 54 → 8+1+22+1+22+1+9=64
-	diagA2v := "        " + H("/") + strings.Repeat(" ", 22) + T("│") + strings.Repeat(" ", 22) + H("\\") + "         "
-	// diagA3v: / at 7, │ at 31, \ at 55 → 7+1+23+1+23+1+8=64
-	diagA3v := "       " + H("/") + strings.Repeat(" ", 23) + T("│") + strings.Repeat(" ", 23) + H("\\") + "        "
-	// diagA4v: / at 6, │ at 31, \ at 56 → 6+1+24+1+24+1+7=64
-	diagA4v := "      " + H("/") + strings.Repeat(" ", 24) + T("│") + strings.Repeat(" ", 24) + H("\\") + "       "
-	// diagA5v: / at 5, │ at 31, \ at 57 → 5+1+25+1+25+1+6=64
-	diagA5v := "     " + H("/") + strings.Repeat(" ", 25) + T("│") + strings.Repeat(" ", 25) + H("\\") + "      "
-	// wallVert: | at 5, │ at 31, | at 57 → 5+1+25+1+25+1+6=64
-	wallVert := "     " + H("|") + strings.Repeat(" ", 25) + T("│") + strings.Repeat(" ", 25) + H("|") + "      "
+	// ── diagonal rows with centre vertical trace (· or │ at col 32) ───────────
+	// col 32 is the exact centre of the 65-col frame; spaces adjusted per row.
+	// diagA1v: / at 10, · at 32, \ at 54 → 10+1+21+1+21+1+10=65
+	diagA1v := "          " + H("/") + strings.Repeat(" ", 21) + T("·") + strings.Repeat(" ", 21) + H("\\") + "          "
+	// diagA2v: / at 9, │ at 32, \ at 55 → 9+1+22+1+22+1+9=65
+	diagA2v := "         " + H("/") + strings.Repeat(" ", 22) + T("│") + strings.Repeat(" ", 22) + H("\\") + "         "
+	// diagA3v: / at 8, │ at 32, \ at 56 → 8+1+23+1+23+1+8=65
+	diagA3v := "        " + H("/") + strings.Repeat(" ", 23) + T("│") + strings.Repeat(" ", 23) + H("\\") + "        "
+	// diagA4v: / at 7, │ at 32, \ at 57 → 7+1+24+1+24+1+7=65
+	diagA4v := "       " + H("/") + strings.Repeat(" ", 24) + T("│") + strings.Repeat(" ", 24) + H("\\") + "       "
+	// diagA5v: / at 6, │ at 32, \ at 58 → 6+1+25+1+25+1+6=65
+	diagA5v := "      " + H("/") + strings.Repeat(" ", 25) + T("│") + strings.Repeat(" ", 25) + H("\\") + "      "
+	// wallVert: | at 6, │ at 32, | at 58 → 6+1+25+1+25+1+6=65
+	wallVert := "      " + H("|") + strings.Repeat(" ", 25) + T("│") + strings.Repeat(" ", 25) + H("|") + "      "
 	// Bottom diagonal trace rows (symmetric to top).
-	diagB5v := "     " + H("\\") + strings.Repeat(" ", 25) + T("│") + strings.Repeat(" ", 25) + H("/") + "      "
-	diagB4v := "      " + H("\\") + strings.Repeat(" ", 24) + T("│") + strings.Repeat(" ", 24) + H("/") + "       "
-	diagB3v := "       " + H("\\") + strings.Repeat(" ", 23) + T("│") + strings.Repeat(" ", 23) + H("/") + "        "
-	diagB2v := "        " + H("\\") + strings.Repeat(" ", 22) + T("│") + strings.Repeat(" ", 22) + H("/") + "         "
-	// diagB1v: \ at 9, · at 31, / at 53 → 9+1+21+1+21+1+10=64
-	diagB1v := "         " + H("\\") + strings.Repeat(" ", 21) + T("·") + strings.Repeat(" ", 21) + H("/") + "          "
+	diagB5v := "      " + H("\\") + strings.Repeat(" ", 25) + T("│") + strings.Repeat(" ", 25) + H("/") + "      "
+	diagB4v := "       " + H("\\") + strings.Repeat(" ", 24) + T("│") + strings.Repeat(" ", 24) + H("/") + "       "
+	diagB3v := "        " + H("\\") + strings.Repeat(" ", 23) + T("│") + strings.Repeat(" ", 23) + H("/") + "        "
+	diagB2v := "         " + H("\\") + strings.Repeat(" ", 22) + T("│") + strings.Repeat(" ", 22) + H("/") + "         "
+	// diagB1v: \ at 10, · at 32, / at 54 → 10+1+21+1+21+1+10=65
+	diagB1v := "          " + H("\\") + strings.Repeat(" ", 21) + T("·") + strings.Repeat(" ", 21) + H("/") + "          "
 
-	// ── secondary circuit trace rows (nodes at cols 18 & 44, junction at 31) ──
+	// ── secondary circuit trace rows (nodes at cols 19 & 45, junction at 32) ──
 	// Interior layout: 12 sp | node(1) | 12 trace | junction(1) | 12 trace | node(1) | 12 sp = 51
 	//
-	// wallSec1: horizontal trace with ┼ at centre → 5+1+12+27+12+1+6=64
-	wallSec1 := "     " + H("|") +
+	// wallSec1: horizontal trace with ┼ at centre → 6+1+12+27+12+1+6=65
+	wallSec1 := "      " + H("|") +
 		strings.Repeat(" ", 12) +
 		T("·"+strings.Repeat("─", 12)+"┼"+strings.Repeat("─", 12)+"·") +
 		strings.Repeat(" ", 12) +
 		H("|") + "      "
-	// wallSec2: node pillars + centre │ → 5+1+12+1+12+1+12+1+12+1+6=64
-	wallSec2 := "     " + H("|") +
+	// wallSec2: node pillars + centre │ → 6+1+12+1+12+1+12+1+12+1+6=65
+	wallSec2 := "      " + H("|") +
 		strings.Repeat(" ", 12) + T("·") +
 		strings.Repeat(" ", 12) + T("│") +
 		strings.Repeat(" ", 12) + T("·") +
 		strings.Repeat(" ", 12) +
 		H("|") + "      "
 
-	// ── centre (star/trace) rows – interior 51 chars, star/node at col 31 ─────
+	// ── centre (star/trace) rows – interior 51 chars, star/node at col 32 ─────
 	// Each arm: ──── · ──── · ──── · ────  (4+3+4+3+4+3+4 = 25 visual chars)
 	ctrArm := strings.Repeat("─", 4) + " · " +
 		strings.Repeat("─", 4) + " · " +
 		strings.Repeat("─", 4) + " · " +
 		strings.Repeat("─", 4)
-	// Traces only, crossroads ┼ at centre → 5+1+(25+1+25)+1+6=64
-	ctrTrace := "     " + H("|") + T(ctrArm+"┼"+ctrArm) + H("|") + "      "
-	// Dim star emerging → 5+1+25+1+25+1+6=64
-	ctrDim := "     " + H("|") + T(ctrArm) + D("✦") + T(ctrArm) + H("|") + "      "
-	// Bright star → 5+1+25+1+25+1+6=64
-	ctrStar := "     " + H("|") + T(ctrArm) + S("★") + T(ctrArm) + H("|") + "      "
+	// Traces only, crossroads ┼ at centre → 6+1+(25+1+25)+1+6=65
+	ctrTrace := "      " + H("|") + T(ctrArm+"┼"+ctrArm) + H("|") + "      "
+	// Dim star emerging → 6+1+25+1+25+1+6=65
+	ctrDim := "      " + H("|") + T(ctrArm) + D("✦") + T(ctrArm) + H("|") + "      "
+	// Bright star → 6+1+25+1+25+1+6=65
+	ctrStar := "      " + H("|") + T(ctrArm) + S("★") + T(ctrArm) + H("|") + "      "
 
 	// ── sparkle decoration rows ────────────────────────────────────────────────
-	// Two ✦ at cols 2 and 61 → 2+1+58+1+2=64
-	sparkRow := "  " + K("✦") + strings.Repeat(" ", 58) + K("✦") + "  "
+	// Two ✦ at cols 2 and 62 → 2+1+59+1+2=65
+	sparkRow := "  " + K("✦") + strings.Repeat(" ", 59) + K("✦") + "  "
 
 	// ── assemble 21 rows ───────────────────────────────────────────────────────
 	var rows [21]string
