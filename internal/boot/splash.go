@@ -12,10 +12,12 @@ import (
 )
 
 const (
-	frameCount    = 10
-	frameInterval = 280 * time.Millisecond
+	frameCount      = 10
+	frameInterval   = 280 * time.Millisecond
 	// frameWidth is the visual width of every rendered row before centering.
-	frameWidth = 64
+	frameWidth      = 64
+	// defaultTermWidth is used when terminal width cannot be detected.
+	defaultTermWidth = 80
 )
 
 // Lipgloss styles used across frames.
@@ -286,7 +288,7 @@ func Run() {
 	}
 	w, _, err := term.GetSize(int(os.Stdout.Fd()))
 	if err != nil || w <= 0 {
-		w = 80
+		w = defaultTermWidth
 	}
 	p := tea.NewProgram(Model{termWidth: w})
 	_, _ = p.Run()
