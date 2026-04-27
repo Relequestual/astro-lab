@@ -529,6 +529,7 @@ func (m *Model) handleUndo() tea.Cmd {
 	}
 	m.undoInFlight = true
 	if m.client == nil {
+		m.undoInFlight = false
 		return func() tea.Msg {
 			return statusMsg{text: "Cannot undo: not authenticated", isError: true}
 		}
