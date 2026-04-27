@@ -152,7 +152,7 @@ func validateTokenCmd(token string, prov *auth.Provider) tea.Cmd {
 		if prov != nil {
 			_ = prov.StoreToken(token)
 		}
-		return authValidatedMsg{login: login, rateLimit: rl}
+		return authValidatedMsg{token: token, login: login, rateLimit: rl}
 	}
 }
 
@@ -171,6 +171,9 @@ func validateGHCLICmd(prov *auth.Provider) tea.Cmd {
 		if err != nil {
 			return authValidatedMsg{err: err}
 		}
-		return authValidatedMsg{login: login, rateLimit: rl}
+		if err := prov.StoreToken(token); err != nil {
+			return authValidatedMsg{err: fmt.Errorf("authenticated but failed to store token: %w", err)}
+		}
+		return authValidatedMsg{token: token, login: login, rateLimit: rl}
 	}
 }

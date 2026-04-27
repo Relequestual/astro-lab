@@ -30,7 +30,6 @@ type Model struct {
 	authProv  *auth.Provider
 	store     *storage.Store
 	client    *github.Client
-	syncEng   *syncpkg.Engine
 	program   *tea.Program
 
 	metadata    *models.Metadata
@@ -114,7 +113,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.token = msg.token
 		client := github.NewClient(msg.token)
-		return m, validateTokenCmdFromToken(client)
+		return m, validateTokenCmdFromToken(client, msg.token)
 
 	case authValidatedMsg:
 		if msg.err != nil {
@@ -123,14 +122,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.authScreen.validating = false
 			return m, nil
 		}
+		m.token = msg.token
 		m.login = msg.login
 		m.rateLimit = msg.rateLimit
-		if m.token == "" {
-			// Token was entered manually via the auth screen
-			m.token = m.authScreen.textInput.Value()
-		}
 		m.client = github.NewClient(m.token)
-		m.syncEng = syncpkg.NewEngine(m.client, m.store)
 		return m, loadDataCmd(m.store)
 
 	case dataLoadedMsg:
@@ -614,13 +609,13 @@ func resolveAuthCmd(prov *auth.Provider) tea.Cmd {
 }
 
 // validateTokenCmdFromToken validates a pre-resolved token.
-func validateTokenCmdFromToken(client *github.Client) tea.Cmd {
+func validateTokenCmdFromToken(client *github.Client, token string) tea.Cmd {
 	return func() tea.Msg {
 		login, rl, err := client.ViewerLoginWithRateLimit(context.Background())
 		if err != nil {
 			return authValidatedMsg{err: err}
 		}
-		return authValidatedMsg{login: login, rateLimit: rl}
+		return authValidatedMsg{token: token, login: login, rateLimit: rl}
 	}
 }
 

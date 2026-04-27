@@ -15,6 +15,7 @@ type authResolvedMsg struct {
 }
 
 type authValidatedMsg struct {
+	token     string
 	login     string
 	rateLimit *models.RateLimit
 	err       error
