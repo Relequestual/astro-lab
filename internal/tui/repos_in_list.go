@@ -62,6 +62,7 @@ func (m reposInListModel) Update(msg tea.Msg) (reposInListModel, tea.Cmd) {
 				if r, ok := m.stars.selectedRepo(); ok {
 					m.confirming = true
 					m.confirm = newConfirmModel(fmt.Sprintf("Remove %q from %q?", r.NameWithOwner, m.listName))
+					m.confirm.width, m.confirm.height = m.stars.width, m.stars.height
 					return m, nil
 				}
 			}

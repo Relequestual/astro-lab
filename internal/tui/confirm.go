@@ -7,9 +7,10 @@ import (
 
 // confirmModel presents a yes/no confirmation dialog.
 type confirmModel struct {
-	message   string
-	confirmed bool
-	resolved  bool
+	message       string
+	confirmed     bool
+	resolved      bool
+	width, height int
 }
 
 func newConfirmModel(message string) confirmModel {
@@ -40,6 +41,13 @@ func (c confirmModel) Update(msg tea.Msg) (confirmModel, tea.Cmd) {
 func (c confirmModel) View() string {
 	prompt := c.message + "\n\n" +
 		mutedStyle.Render("[y]es  [n]o")
-	return lipgloss.Place(50, 5, lipgloss.Center, lipgloss.Center,
+	w, h := c.width, c.height
+	if w < 50 {
+		w = 50
+	}
+	if h < 5 {
+		h = 5
+	}
+	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center,
 		dialogStyle.Render(prompt))
 }

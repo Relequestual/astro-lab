@@ -12,12 +12,13 @@ import (
 
 // previewModel shows a dry-run diff before confirming a mutation.
 type previewModel struct {
-	active    bool
-	repoName  string
-	diff      models.MoveDiff
-	listNames map[string]string
-	confirmed bool
-	resolved  bool
+	active        bool
+	repoName      string
+	diff          models.MoveDiff
+	listNames     map[string]string
+	confirmed     bool
+	resolved      bool
+	width, height int
 }
 
 func newPreviewModel() previewModel {
@@ -91,6 +92,13 @@ func (m previewModel) View() string {
 
 	b.WriteString("\n" + mutedStyle.Render("[y]es  [n]o"))
 
-	return lipgloss.Place(50, 12, lipgloss.Center, lipgloss.Center,
+	w, h := m.width, m.height
+	if w < 50 {
+		w = 50
+	}
+	if h < 12 {
+		h = 12
+	}
+	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center,
 		dialogStyle.Render(b.String()))
 }

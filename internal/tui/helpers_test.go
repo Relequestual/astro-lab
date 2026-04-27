@@ -44,6 +44,8 @@ func TestTruncate(t *testing.T) {
 		{"very_short_max", "hello", 1, "…"},
 		{"zero_max", "hello", 0, "…"},
 		{"empty", "", 5, ""},
+		{"multibyte_no_truncate", "日本語テスト", 10, "日本語テスト"},
+		{"multibyte_truncate", "日本語テスト", 4, "日本語…"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

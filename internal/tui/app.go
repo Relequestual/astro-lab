@@ -104,6 +104,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.reposInList.stars.width, m.reposInList.stars.height = msg.Width, msg.Height
 		m.detailPanel.width, m.detailPanel.height = msg.Width, msg.Height
 		m.listPicker.width, m.listPicker.height = msg.Width, msg.Height
+		m.syncOverlay.width, m.syncOverlay.height = msg.Width, msg.Height
+		m.preview.width, m.preview.height = msg.Width, msg.Height
 		return m, nil
 
 	case authResolvedMsg:

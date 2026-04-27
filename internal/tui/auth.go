@@ -150,7 +150,9 @@ func validateTokenCmd(token string, prov *auth.Provider) tea.Cmd {
 			return authValidatedMsg{err: err}
 		}
 		if prov != nil {
-			_ = prov.StoreToken(token)
+			if err := prov.StoreToken(token); err != nil {
+				return authValidatedMsg{err: fmt.Errorf("authenticated but failed to store token: %w", err)}
+			}
 		}
 		return authValidatedMsg{token: token, login: login, rateLimit: rl}
 	}

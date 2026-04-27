@@ -191,6 +191,7 @@ func (m listsModel) Update(msg tea.Msg) (listsModel, tea.Cmd) {
 			if l, ok := m.selectedList(); ok {
 				m.confirming = true
 				m.confirm = newConfirmModel(fmt.Sprintf("Delete list %q?", l.Name))
+				m.confirm.width, m.confirm.height = m.width, m.height
 				return m, nil
 			}
 		case "home":

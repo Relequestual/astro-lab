@@ -51,15 +51,16 @@ func rateLimitString(rl *models.RateLimit) string {
 	return fmt.Sprintf("%d/%d", rl.Remaining, rl.Limit)
 }
 
-// truncate a string to maxLen, adding "…" if truncated.
+// truncate a string to maxLen runes, adding "…" if truncated.
 func truncate(s string, maxLen int) string {
-	if len(s) <= maxLen {
+	runes := []rune(s)
+	if len(runes) <= maxLen {
 		return s
 	}
 	if maxLen <= 1 {
 		return "…"
 	}
-	return s[:maxLen-1] + "…"
+	return string(runes[:maxLen-1]) + "…"
 }
 
 // fuzzyMatch checks if query is a subsequence of target (case-insensitive).

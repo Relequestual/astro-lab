@@ -12,12 +12,13 @@ import (
 
 // syncOverlayModel shows sync progress as a modal overlay.
 type syncOverlayModel struct {
-	active   bool
-	spinner  spinner.Model
-	phase    string
-	fetched  int
-	total    int
-	cancelFn context.CancelFunc
+	active        bool
+	spinner       spinner.Model
+	phase         string
+	fetched       int
+	total         int
+	cancelFn      context.CancelFunc
+	width, height int
 }
 
 func newSyncOverlayModel() syncOverlayModel {
@@ -86,7 +87,14 @@ func (m syncOverlayModel) View() string {
 	}
 	b.WriteString("\n" + mutedStyle.Render("Esc to cancel"))
 
-	return lipgloss.Place(60, 10, lipgloss.Center, lipgloss.Center,
+	w, h := m.width, m.height
+	if w < 60 {
+		w = 60
+	}
+	if h < 10 {
+		h = 10
+	}
+	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center,
 		dialogStyle.Render(b.String()))
 }
 
