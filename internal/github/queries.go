@@ -398,8 +398,12 @@ func (c *Client) CreateList(ctx context.Context, name, description string, isPri
 	}
 	l := data.CreateUserList.List
 	return &models.StarList{
-		ID: l.ID, Name: l.Name, Slug: l.Slug,
-		IsPrivate: l.IsPrivate, UpdatedAt: l.UpdatedAt,
+		ID:          l.ID,
+		Name:        l.Name,
+		Slug:        l.Slug,
+		Description: l.Description,
+		IsPrivate:   l.IsPrivate,
+		UpdatedAt:   l.UpdatedAt,
 	}, nil
 }
 

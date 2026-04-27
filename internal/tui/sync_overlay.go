@@ -8,10 +8,6 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-
-	"github.com/Relequestual/astro-lab/internal/github"
-	"github.com/Relequestual/astro-lab/internal/storage"
-	syncpkg "github.com/Relequestual/astro-lab/internal/sync"
 )
 
 // syncOverlayModel shows sync progress as a modal overlay.
@@ -70,7 +66,7 @@ func (m syncOverlayModel) Update(msg tea.Msg) (syncOverlayModel, tea.Cmd) {
 		if m.active && msg.String() == "esc" {
 			m.stop()
 			return m, func() tea.Msg {
-				return statusMsg{text: "Sync cancelled", isError: true}
+				return statusMsg{text: "Sync cancelled", isError: false}
 			}
 		}
 	}
@@ -94,22 +90,3 @@ func (m syncOverlayModel) View() string {
 		dialogStyle.Render(b.String()))
 }
 
-// syncCmd creates a tea.Cmd that runs a sync operation.
-func syncCmd(token string, store *storage.Store, full bool) tea.Cmd {
-	return func() tea.Msg {
-		client := github.NewClient(token)
-		engine := syncpkg.NewEngine(client, store)
-
-		ctx := context.Background()
-		var result *syncpkg.SyncResult
-		var err error
-
-		if full {
-			result, err = engine.Full(ctx, nil)
-		} else {
-			result, err = engine.Delta(ctx, nil)
-		}
-
-		return syncCompleteMsg{result: result, err: err}
-	}
-}

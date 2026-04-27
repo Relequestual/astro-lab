@@ -233,3 +233,110 @@ func TestParseListItemsResponse(t *testing.T) {
 		t.Errorf("forkCount: got %d want %d", node.ForkCount, 17000)
 	}
 }
+
+func TestParseCreateListResponse(t *testing.T) {
+	fixture := `{
+		"createUserList": {
+			"list": {
+				"id": "UL_new",
+				"name": "My New List",
+				"slug": "my-new-list",
+				"description": "A test list",
+				"isPrivate": true,
+				"updatedAt": "2024-06-01T12:00:00Z"
+			}
+		}
+	}`
+
+	var data struct {
+		CreateUserList struct {
+			List struct {
+				ID          string    `json:"id"`
+				Name        string    `json:"name"`
+				Slug        string    `json:"slug"`
+				Description string    `json:"description"`
+				IsPrivate   bool      `json:"isPrivate"`
+				UpdatedAt   time.Time `json:"updatedAt"`
+			} `json:"list"`
+		} `json:"createUserList"`
+	}
+	if err := json.Unmarshal([]byte(fixture), &data); err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	l := data.CreateUserList.List
+	if l.ID != "UL_new" {
+		t.Errorf("id: got %q want %q", l.ID, "UL_new")
+	}
+	if l.Name != "My New List" {
+		t.Errorf("name: got %q want %q", l.Name, "My New List")
+	}
+	if l.Slug != "my-new-list" {
+		t.Errorf("slug: got %q want %q", l.Slug, "my-new-list")
+	}
+	if l.Description != "A test list" {
+		t.Errorf("description: got %q want %q", l.Description, "A test list")
+	}
+	if !l.IsPrivate {
+		t.Error("expected isPrivate to be true")
+	}
+	expected := time.Date(2024, 6, 1, 12, 0, 0, 0, time.UTC)
+	if !l.UpdatedAt.Equal(expected) {
+		t.Errorf("updatedAt: got %v want %v", l.UpdatedAt, expected)
+	}
+}
+
+func TestParseUpdateListResponse(t *testing.T) {
+	fixture := `{
+		"updateUserList": {
+			"list": {
+				"id": "UL_1",
+				"name": "Renamed List"
+			}
+		}
+	}`
+
+	var data struct {
+		UpdateUserList struct {
+			List struct {
+				ID   string `json:"id"`
+				Name string `json:"name"`
+			} `json:"list"`
+		} `json:"updateUserList"`
+	}
+	if err := json.Unmarshal([]byte(fixture), &data); err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	if data.UpdateUserList.List.ID != "UL_1" {
+		t.Errorf("id: got %q want %q", data.UpdateUserList.List.ID, "UL_1")
+	}
+	if data.UpdateUserList.List.Name != "Renamed List" {
+		t.Errorf("name: got %q want %q", data.UpdateUserList.List.Name, "Renamed List")
+	}
+}
+
+func TestParseDeleteListResponse(t *testing.T) {
+	fixture := `{
+		"deleteUserList": {
+			"user": {
+				"login": "testuser"
+			}
+		}
+	}`
+
+	var data struct {
+		DeleteUserList struct {
+			User struct {
+				Login string `json:"login"`
+			} `json:"user"`
+		} `json:"deleteUserList"`
+	}
+	if err := json.Unmarshal([]byte(fixture), &data); err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	if data.DeleteUserList.User.Login != "testuser" {
+		t.Errorf("login: got %q want %q", data.DeleteUserList.User.Login, "testuser")
+	}
+}

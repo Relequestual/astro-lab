@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -260,6 +261,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var allLists []models.StarList
 		if m.lists != nil {
 			allLists = listSlice(m.lists.ByListID)
+			sort.Slice(allLists, func(i, j int) bool {
+				return allLists[i].Name < allLists[j].Name
+			})
 		}
 		var currentIDs []string
 		if m.memberships != nil {

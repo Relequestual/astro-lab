@@ -219,10 +219,12 @@ func (m starsModel) Update(msg tea.Msg) (starsModel, tea.Cmd) {
 			}
 		case "a":
 			if len(m.selected) > 0 {
-				// Batch mode: use first selected
-				for id := range m.selected {
-					return m, func() tea.Msg {
-						return showListPickerMsg{repoID: id}
+				// Batch mode: use first selected in the current filtered/sorted order.
+				for _, r := range m.filtered {
+					if m.selected[r.ID] {
+						return m, func() tea.Msg {
+							return showListPickerMsg{repoID: r.ID, repoName: r.NameWithOwner}
+						}
 					}
 				}
 			}
