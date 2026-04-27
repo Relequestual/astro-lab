@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Relequestual/astro-lab/internal/boot"
 	"github.com/Relequestual/astro-lab/internal/tui"
 	"github.com/spf13/cobra"
 )
@@ -12,6 +13,7 @@ import (
 var (
 	jsonOutput bool
 	tokenFlag  string
+	noSplash   bool
 )
 
 // rootCmd is the base command
@@ -19,6 +21,12 @@ var rootCmd = &cobra.Command{
 	Use:   "astlab",
 	Short: "Astrometrics Lab - Manage GitHub stars and star lists",
 	Long:  "A CLI and TUI for managing GitHub stars and star lists safely.",
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if !noSplash {
+			boot.Run()
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return tui.Run()
 	},
@@ -27,9 +35,10 @@ var rootCmd = &cobra.Command{
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&jsonOutput, "json", false, "Output in JSON format")
 	rootCmd.PersistentFlags().StringVar(&tokenFlag, "token", "", "GitHub token (overrides all other auth sources)")
+	rootCmd.PersistentFlags().BoolVar(&noSplash, "no-splash", false, "Skip the boot splash animation")
 }
 
-// Execute runs the root command
+// Execute runs the root command, preceded by the boot splash unless suppressed.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
