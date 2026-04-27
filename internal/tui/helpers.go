@@ -168,7 +168,7 @@ func updateLocalMemberships(md *storage.MembershipsData, repoID string, newListI
 
 // headerView renders the persistent context bar at the top of every screen.
 func headerView(width int, login string, rateLimit string, lastSync time.Time) string {
-	left := headerStyle.Render("⭐ Astrometrics Lab")
+	left := "⭐ Astrometrics Lab"
 
 	var parts []string
 	if login != "" {
@@ -182,7 +182,7 @@ func headerView(width int, login string, rateLimit string, lastSync time.Time) s
 	}
 	right := strings.Join(parts, "  ")
 
-	leftWidth := lipgloss.Width(left)
+	leftWidth := lipgloss.Width(headerStyle.Render(left))
 	rightWidth := lipgloss.Width(right)
 	spacer := ""
 	if gap := width - leftWidth - rightWidth - 2; gap > 0 {

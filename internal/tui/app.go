@@ -56,6 +56,7 @@ type Model struct {
 	listPicker  listPickerModel
 
 	undoStack       *UndoStack
+	undoInFlight    bool
 	pendingMutation *pendingMutation
 }
 
@@ -134,6 +135,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.token = msg.token
 		m.login = msg.login
 		m.rateLimit = msg.rateLimit
+		m.authScreen.validating = false
 		m.client = github.NewClient(m.token)
 		return m, loadDataCmd(m.store)
 
@@ -314,6 +316,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, loadDataCmd(m.store)
 
 	case undoResultMsg:
+		m.undoInFlight = false
 		if msg.err != nil {
 			m.statusText = fmt.Sprintf("Undo failed (%s): %s", msg.description, msg.err)
 			m.statusIsError = true
@@ -517,10 +520,14 @@ func (m *Model) navigateBack() tea.Cmd {
 
 // handleUndo peeks from the undo stack, attempts the revert, and only pops on success.
 func (m *Model) handleUndo() tea.Cmd {
+	if m.undoInFlight {
+		return func() tea.Msg { return statusMsg{text: "Undo already in progress"} }
+	}
 	entry, ok := m.undoStack.Peek()
 	if !ok {
 		return func() tea.Msg { return statusMsg{text: "Nothing to undo"} }
 	}
+	m.undoInFlight = true
 	if m.client == nil {
 		return func() tea.Msg {
 			return statusMsg{text: "Cannot undo: not authenticated", isError: true}

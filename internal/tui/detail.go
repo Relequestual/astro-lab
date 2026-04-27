@@ -51,7 +51,7 @@ func (m detailModel) Update(msg tea.Msg) (detailModel, tea.Cmd) {
 			url := m.repo.URL
 			return m, func() tea.Msg {
 				if err := clipboard.WriteAll(url); err != nil {
-					return statusMsg{text: "Copied URL: " + url + " (clipboard unavailable)"}
+					return statusMsg{text: "Clipboard unavailable: " + url, isError: true}
 				}
 				return statusMsg{text: "Copied to clipboard: " + url}
 			}
@@ -67,7 +67,7 @@ func (m detailModel) Update(msg tea.Msg) (detailModel, tea.Cmd) {
 				url := m.repo.URL
 				return m, func() tea.Msg {
 					if err := clipboard.WriteAll(url); err != nil {
-						return statusMsg{text: "Copied URL: " + url + " (clipboard unavailable)"}
+						return statusMsg{text: "Clipboard unavailable: " + url, isError: true}
 					}
 					return statusMsg{text: "Copied to clipboard: " + url}
 				}

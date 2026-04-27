@@ -93,12 +93,10 @@ func (m previewModel) View() string {
 	b.WriteString("\n" + mutedStyle.Render("[y]es  [n]o"))
 
 	w, h := m.width, m.height
-	if w < 50 {
-		w = 50
+	if w <= 0 || h <= 0 {
+		return dialogStyle.Render(b.String())
 	}
-	if h < 12 {
-		h = 12
-	}
-	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center,
-		dialogStyle.Render(b.String()))
+
+	content := dialogStyle.MaxWidth(w).Render(b.String())
+	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, content)
 }

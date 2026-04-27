@@ -41,13 +41,12 @@ func (c confirmModel) Update(msg tea.Msg) (confirmModel, tea.Cmd) {
 func (c confirmModel) View() string {
 	prompt := c.message + "\n\n" +
 		mutedStyle.Render("[y]es  [n]o")
+
 	w, h := c.width, c.height
-	if w < 50 {
-		w = 50
+	if w <= 0 || h <= 0 {
+		return dialogStyle.Render(prompt)
 	}
-	if h < 5 {
-		h = 5
-	}
-	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center,
-		dialogStyle.Render(prompt))
+
+	content := dialogStyle.MaxWidth(w).Render(prompt)
+	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, content)
 }

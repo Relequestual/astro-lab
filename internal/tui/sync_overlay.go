@@ -88,13 +88,11 @@ func (m syncOverlayModel) View() string {
 	b.WriteString("\n" + mutedStyle.Render("Esc to cancel"))
 
 	w, h := m.width, m.height
-	if w < 60 {
-		w = 60
+	if w <= 0 || h <= 0 {
+		return dialogStyle.Render(b.String())
 	}
-	if h < 10 {
-		h = 10
-	}
-	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center,
-		dialogStyle.Render(b.String()))
+
+	content := dialogStyle.MaxWidth(w).Render(b.String())
+	return lipgloss.Place(w, h, lipgloss.Center, lipgloss.Center, content)
 }
 
