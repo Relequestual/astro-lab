@@ -99,13 +99,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
-		m.listsPanel.width, m.listsPanel.height = msg.Width, msg.Height
-		m.starsPanel.width, m.starsPanel.height = msg.Width, msg.Height
-		m.reposInList.stars.width, m.reposInList.stars.height = msg.Width, msg.Height
-		m.detailPanel.width, m.detailPanel.height = msg.Width, msg.Height
-		m.listPicker.width, m.listPicker.height = msg.Width, msg.Height
-		m.syncOverlay.width, m.syncOverlay.height = msg.Width, msg.Height
-		m.preview.width, m.preview.height = msg.Width, msg.Height
+		// Reserve 2 lines for header and footer (1 each).
+		contentHeight := msg.Height - 2
+		if contentHeight < 1 {
+			contentHeight = 1
+		}
+		m.listsPanel.width, m.listsPanel.height = msg.Width, contentHeight
+		m.starsPanel.width, m.starsPanel.height = msg.Width, contentHeight
+		m.reposInList.stars.width, m.reposInList.stars.height = msg.Width, contentHeight
+		m.detailPanel.width, m.detailPanel.height = msg.Width, contentHeight
+		m.listPicker.width, m.listPicker.height = msg.Width, contentHeight
+		m.syncOverlay.width, m.syncOverlay.height = msg.Width, contentHeight
+		m.preview.width, m.preview.height = msg.Width, contentHeight
 		return m, nil
 
 	case authResolvedMsg:
@@ -156,10 +161,14 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.statusText = ""
 		m.prevScreen = m.screen
 		m.screen = msg.screen
+		contentHeight := m.height - 2
+		if contentHeight < 1 {
+			contentHeight = 1
+		}
 		switch msg.screen {
 		case ScreenReposInList:
 			m.reposInList = newReposInListModel(msg.listID, msg.listName)
-			m.reposInList.stars.width, m.reposInList.stars.height = m.width, m.height
+			m.reposInList.stars.width, m.reposInList.stars.height = m.width, contentHeight
 			if m.memberships != nil {
 				repoIDs := m.memberships.ListToRepos[msg.listID]
 				repos := m.reposForIDs(repoIDs)
@@ -171,7 +180,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if repo, ok := m.stars.ByRepoID[msg.repoID]; ok {
 					listNames := m.listNamesForRepo(msg.repoID)
 					m.detailPanel = newDetailModel(repo, listNames)
-					m.detailPanel.width, m.detailPanel.height = m.width, m.height
+					m.detailPanel.width, m.detailPanel.height = m.width, contentHeight
 				}
 			}
 		}
@@ -293,6 +302,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.statusText = fmt.Sprintf("Update failed for %s: %s", msg.repoName, msg.err)
 			m.statusIsError = true
 		} else {
+			m.undoStack.Push(UndoEntry{
+				Description: fmt.Sprintf("update lists for %s", msg.repoName),
+				RepoID:      msg.repoID,
+				RepoName:    msg.repoName,
+				PreviousIDs: msg.prevListIDs,
+			})
 			m.statusText = fmt.Sprintf("Updated lists for %s", msg.repoName)
 			m.statusIsError = false
 		}
@@ -303,6 +318,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.statusText = fmt.Sprintf("Undo failed (%s): %s", msg.description, msg.err)
 			m.statusIsError = true
 		} else {
+			// Only pop the entry from the stack on successful undo.
+			m.undoStack.Pop()
 			m.statusText = fmt.Sprintf("Undone: %s", msg.description)
 			m.statusIsError = false
 		}
@@ -339,13 +356,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				if confirmed && m.pendingMutation != nil {
 					pm := m.pendingMutation
 					m.pendingMutation = nil
-					m.undoStack.Push(UndoEntry{
-						Description: fmt.Sprintf("update lists for %s", pm.repoName),
-						RepoID:      pm.repoID,
-						RepoName:    pm.repoName,
-						PreviousIDs: pm.prevListIDs,
-					})
-					return m, executeMutationCmd(m.client, m.store, m.memberships, pm.repoID, pm.repoName, pm.newListIDs)
+					return m, executeMutationCmd(m.client, m.store, m.memberships, pm.repoID, pm.repoName, pm.newListIDs, pm.prevListIDs)
 				}
 				m.pendingMutation = nil
 			}
@@ -504,9 +515,9 @@ func (m *Model) navigateBack() tea.Cmd {
 	return nil
 }
 
-// handleUndo pops from the undo stack and reverts the mutation.
+// handleUndo peeks from the undo stack, attempts the revert, and only pops on success.
 func (m *Model) handleUndo() tea.Cmd {
-	entry, ok := m.undoStack.Pop()
+	entry, ok := m.undoStack.Peek()
 	if !ok {
 		return func() tea.Msg { return statusMsg{text: "Nothing to undo"} }
 	}
@@ -652,7 +663,7 @@ func loadDataCmd(store *storage.Store) tea.Cmd {
 }
 
 // executeMutationCmd calls UpdateUserListsForItem and updates local state.
-func executeMutationCmd(client *github.Client, store *storage.Store, memberships *storage.MembershipsData, repoID, repoName string, newListIDs []string) tea.Cmd {
+func executeMutationCmd(client *github.Client, store *storage.Store, memberships *storage.MembershipsData, repoID, repoName string, newListIDs, prevListIDs []string) tea.Cmd {
 	return func() tea.Msg {
 		if client == nil {
 			return updateListsResultMsg{repoID: repoID, repoName: repoName, err: fmt.Errorf("not authenticated")}
@@ -674,7 +685,7 @@ func executeMutationCmd(client *github.Client, store *storage.Store, memberships
 				}
 			}
 		}
-		return updateListsResultMsg{repoID: repoID, repoName: repoName}
+		return updateListsResultMsg{repoID: repoID, repoName: repoName, prevListIDs: prevListIDs}
 	}
 }
 

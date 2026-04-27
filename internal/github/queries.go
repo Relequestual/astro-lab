@@ -239,13 +239,17 @@ func (c *Client) FetchStarredRepos(ctx context.Context, since time.Time, onProgr
 				hitCutoff = true
 				break
 			}
+			lang := ""
+			if e.Node.PrimaryLanguage != nil {
+				lang = e.Node.PrimaryLanguage.Name
+			}
 			allRepos = append(allRepos, models.Repository{
 				ID:             e.Node.ID,
 				NameWithOwner:  e.Node.NameWithOwner,
 				StarredAt:      e.StarredAt,
 				Description:    e.Node.Description,
 				URL:            e.Node.URL,
-				Language:       e.Node.PrimaryLanguage.Name,
+				Language:       lang,
 				StargazerCount: e.Node.StargazerCount,
 				ForkCount:      e.Node.ForkCount,
 			})
@@ -339,12 +343,16 @@ func (c *Client) FetchListItems(ctx context.Context, listID string, onProgress P
 			if n.ID == "" {
 				continue // skip non-repository items
 			}
+			lang := ""
+			if n.PrimaryLanguage != nil {
+				lang = n.PrimaryLanguage.Name
+			}
 			allItems = append(allItems, models.Repository{
 				ID:             n.ID,
 				NameWithOwner:  n.NameWithOwner,
 				Description:    n.Description,
 				URL:            n.URL,
-				Language:       n.PrimaryLanguage.Name,
+				Language:       lang,
 				StargazerCount: n.StargazerCount,
 				ForkCount:      n.ForkCount,
 			})

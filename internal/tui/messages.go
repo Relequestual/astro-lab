@@ -79,6 +79,7 @@ type listPickerConfirmedMsg struct {
 
 type updateListsResultMsg struct {
 	repoID, repoName string
+	prevListIDs      []string
 	err              error
 }
 
