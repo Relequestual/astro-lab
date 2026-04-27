@@ -224,7 +224,6 @@ func footerView(width int, bindings []KeyBinding, status string, isError bool) s
 func globalBindings() []KeyBinding {
 	return []KeyBinding{
 		{Key: "?", Desc: "help"},
-		{Key: "s", Desc: "sync"},
 		{Key: "esc", Desc: "back"},
 		{Key: "q", Desc: "quit"},
 	}
@@ -241,7 +240,6 @@ func helpView(width, height int) string {
 			{Key: "ctrl+c", Desc: "Quit"},
 			{Key: "q", Desc: "Quit"},
 			{Key: "esc", Desc: "Back / close overlay"},
-			{Key: "s", Desc: "Trigger sync"},
 			{Key: "u", Desc: "Undo last action"},
 		}},
 		{"Dashboard", []KeyBinding{
@@ -271,7 +269,8 @@ func helpView(width, height int) string {
 		}},
 		{"Repo Detail", []KeyBinding{
 			{Key: "esc", Desc: "Back"},
-			{Key: "o", Desc: "Copy URL"},
+			{Key: "o", Desc: "Open in browser"},
+			{Key: "c", Desc: "Copy URL"},
 			{Key: "a", Desc: "Add to list"},
 		}},
 	}

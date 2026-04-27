@@ -381,34 +381,26 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Global keys
+		// Global keys that always work (including during text input)
 		switch msg.String() {
 		case "ctrl+c":
 			m.quitting = true
 			return m, tea.Quit
-		case "?":
-			m.showHelp = true
-			return m, nil
-		case "q":
-			if m.screen == ScreenAuth {
+		}
+
+		// Character-based hotkeys are suppressed when a text input is active
+		// so that typing doesn't trigger global actions.
+		if !m.isTextInputActive() {
+			switch msg.String() {
+			case "?":
+				m.showHelp = true
+				return m, nil
+			case "q":
 				m.quitting = true
 				return m, tea.Quit
-			}
-			if m.screen == ScreenDashboard {
-				m.quitting = true
-				return m, tea.Quit
-			}
-			// On sub-screens, treat q as quit too
-			m.quitting = true
-			return m, tea.Quit
-		case "esc":
-			return m, m.navigateBack()
-		case "s":
-			if m.screen != ScreenAuth {
-				return m, func() tea.Msg { return syncStartMsg{full: false} }
-			}
-		case "u":
-			if m.screen != ScreenAuth {
+			case "esc":
+				return m, m.navigateBack()
+			case "u":
 				return m, m.handleUndo()
 			}
 		}
@@ -477,6 +469,22 @@ func (m *Model) View() string {
 	footer := footerView(m.width, globalBindings(), m.statusText, m.statusIsError)
 
 	return header + "\n" + body + "\n" + footer
+}
+
+// isTextInputActive returns true when any sub-screen has a focused text input,
+// meaning character keys should be forwarded to the screen, not handled globally.
+func (m *Model) isTextInputActive() bool {
+	switch m.screen {
+	case ScreenAuth:
+		return true
+	case ScreenAllStars:
+		return m.starsPanel.searching
+	case ScreenLists:
+		return m.listsPanel.searching || m.listsPanel.inputMode != listInputNone
+	case ScreenReposInList:
+		return m.reposInList.stars.searching
+	}
+	return false
 }
 
 // updateActiveScreen delegates a message to the currently active screen.

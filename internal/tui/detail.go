@@ -2,10 +2,13 @@ package tui
 
 import (
 	"fmt"
+	"os/exec"
+	"runtime"
 	"strings"
 
 	"github.com/atotto/clipboard"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/Relequestual/astro-lab/internal/models"
 )
@@ -19,7 +22,7 @@ type detailModel struct {
 	actionIndex int
 }
 
-var detailActions = []string{"Add to list (a)", "Copy URL (o)", "Back (esc)"}
+var detailActions = []string{"Add to list (a)", "Open in browser (o)", "Copy URL (c)", "Back (esc)"}
 
 func newDetailModel(repo models.Repository, listNames []string) detailModel {
 	return detailModel{
@@ -49,6 +52,9 @@ func (m detailModel) Update(msg tea.Msg) (detailModel, tea.Cmd) {
 			}
 		case "o":
 			url := m.repo.URL
+			return m, openBrowserCmd(url)
+		case "c":
+			url := m.repo.URL
 			return m, func() tea.Msg {
 				if err := clipboard.WriteAll(url); err != nil {
 					return statusMsg{text: "Clipboard unavailable: " + url, isError: true}
@@ -65,18 +71,40 @@ func (m detailModel) Update(msg tea.Msg) (detailModel, tea.Cmd) {
 				}
 			case 1:
 				url := m.repo.URL
+				return m, openBrowserCmd(url)
+			case 2:
+				url := m.repo.URL
 				return m, func() tea.Msg {
 					if err := clipboard.WriteAll(url); err != nil {
 						return statusMsg{text: "Clipboard unavailable: " + url, isError: true}
 					}
 					return statusMsg{text: "Copied to clipboard: " + url}
 				}
-			case 2:
+			case 3:
 				return m, func() tea.Msg { return backMsg{} }
 			}
 		}
 	}
 	return m, nil
+}
+
+// openBrowserCmd returns a tea.Cmd that opens the given URL in the default browser.
+func openBrowserCmd(url string) tea.Cmd {
+	return func() tea.Msg {
+		var cmd *exec.Cmd
+		switch runtime.GOOS {
+		case "darwin":
+			cmd = exec.Command("open", url)
+		case "windows":
+			cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+		default: // linux, freebsd, etc.
+			cmd = exec.Command("xdg-open", url)
+		}
+		if err := cmd.Start(); err != nil {
+			return statusMsg{text: "Could not open browser: " + err.Error(), isError: true}
+		}
+		return statusMsg{text: "Opened in browser: " + url}
+	}
 }
 
 func (m detailModel) View() string {
@@ -90,7 +118,15 @@ func (m detailModel) View() string {
 	}
 
 	row("Name", r.NameWithOwner)
-	row("Description", r.Description)
+	if r.Description != "" {
+		// Wrap description to fit the available width after the label column.
+		descWidth := m.width - 20 // 2 indent + 16 label width + 2 margin
+		if descWidth < 30 {
+			descWidth = 30
+		}
+		wrapped := lipgloss.NewStyle().Width(descWidth).Render(r.Description)
+		b.WriteString("  " + labelStyle.Render("Description") + wrapped + "\n")
+	}
 	row("Language", r.Language)
 	row("Stars", fmt.Sprintf("%d", r.StargazerCount))
 	row("Forks", fmt.Sprintf("%d", r.ForkCount))
