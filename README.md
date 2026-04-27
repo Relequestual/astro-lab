@@ -1,7 +1,7 @@
 # Astrometrics Lab
 
 <p align="center">
-	<img src="./astrometrics-lab.png" alt="Astrometrics Lab logo" width="240" />
+	<img src="./astrometrics-lab.png" alt="Astrometrics Lab logo" width="480" />
 </p>
 
 Astrometrics Lab is a Go CLI and Bubble Tea TUI for managing GitHub stars and star lists safely.
