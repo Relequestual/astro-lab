@@ -117,8 +117,8 @@ func (m listPickerModel) View() string {
 	}
 
 	availH := m.height - 6
-	if availH < 5 {
-		availH = 10
+	if availH < 1 {
+		availH = 1
 	}
 	start, end := visibleWindow(m.cursor, len(m.lists), availH)
 

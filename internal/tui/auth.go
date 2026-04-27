@@ -147,11 +147,11 @@ func validateTokenCmd(token string, prov *auth.Provider) tea.Cmd {
 		client := github.NewClient(token)
 		login, rl, err := client.ViewerLoginWithRateLimit(context.Background())
 		if err != nil {
-			return authValidatedMsg{err: err}
+			return authValidatedMsg{token: token, err: err}
 		}
 		if prov != nil {
 			if err := prov.StoreToken(token); err != nil {
-				return authValidatedMsg{err: fmt.Errorf("authenticated but failed to store token: %w", err)}
+				return authValidatedMsg{token: token, err: fmt.Errorf("authenticated but failed to store token: %w", err)}
 			}
 		}
 		return authValidatedMsg{token: token, login: login, rateLimit: rl}
@@ -171,10 +171,10 @@ func validateGHCLICmd(prov *auth.Provider) tea.Cmd {
 		client := github.NewClient(token)
 		login, rl, err := client.ViewerLoginWithRateLimit(context.Background())
 		if err != nil {
-			return authValidatedMsg{err: err}
+			return authValidatedMsg{token: token, err: err}
 		}
 		if err := prov.StoreToken(token); err != nil {
-			return authValidatedMsg{err: fmt.Errorf("authenticated but failed to store token: %w", err)}
+			return authValidatedMsg{token: token, err: fmt.Errorf("authenticated but failed to store token: %w", err)}
 		}
 		return authValidatedMsg{token: token, login: login, rateLimit: rl}
 	}

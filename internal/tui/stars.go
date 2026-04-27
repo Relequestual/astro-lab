@@ -306,7 +306,7 @@ func (m starsModel) RenderTable(title string, width, height int) string {
 
 	availH := height - 8
 	if availH < 1 {
-		availH = 10
+		availH = 1
 	}
 	start, end := visibleWindow(m.cursor, len(m.filtered), availH)
 

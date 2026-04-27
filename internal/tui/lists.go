@@ -208,8 +208,7 @@ func (m listsModel) View() string {
 	b.WriteString(titleStyle.Render("📋 Star Lists") + "\n")
 
 	if m.confirming {
-		b.WriteString(m.confirm.View())
-		return b.String()
+		return m.confirm.View()
 	}
 
 	if m.inputMode != listInputNone {
@@ -233,7 +232,7 @@ func (m listsModel) View() string {
 
 	availH := m.height - 6
 	if availH < 1 {
-		availH = 10
+		availH = 1
 	}
 	start, end := visibleWindow(m.cursor, len(m.filtered), availH)
 

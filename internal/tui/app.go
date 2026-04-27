@@ -628,7 +628,7 @@ func validateTokenCmdFromToken(client *github.Client, token string) tea.Cmd {
 	return func() tea.Msg {
 		login, rl, err := client.ViewerLoginWithRateLimit(context.Background())
 		if err != nil {
-			return authValidatedMsg{err: err}
+			return authValidatedMsg{token: token, err: err}
 		}
 		return authValidatedMsg{token: token, login: login, rateLimit: rl}
 	}
