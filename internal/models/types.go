@@ -3,11 +3,14 @@ package models
 import "time"
 
 type Repository struct {
-	ID            string    `json:"id"`
-	NameWithOwner string    `json:"nameWithOwner"`
-	StarredAt     time.Time `json:"starredAt"`
-	Description   string    `json:"description,omitempty"`
-	URL           string    `json:"url,omitempty"`
+	ID             string    `json:"id"`
+	NameWithOwner  string    `json:"nameWithOwner"`
+	StarredAt      time.Time `json:"starredAt"`
+	Description    string    `json:"description,omitempty"`
+	URL            string    `json:"url,omitempty"`
+	Language       string    `json:"language,omitempty"`
+	StargazerCount int       `json:"stargazerCount"`
+	ForkCount      int       `json:"forkCount"`
 }
 
 type StarList struct {
