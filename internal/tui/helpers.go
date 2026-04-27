@@ -64,12 +64,13 @@ func truncate(s string, maxLen int) string {
 }
 
 // fuzzyMatch checks if query is a subsequence of target (case-insensitive).
+// Operates on runes for correct Unicode handling.
 func fuzzyMatch(target, query string) bool {
 	if query == "" {
 		return true
 	}
-	t := strings.ToLower(target)
-	q := strings.ToLower(query)
+	t := []rune(strings.ToLower(target))
+	q := []rune(strings.ToLower(query))
 	ti := 0
 	for qi := 0; qi < len(q); qi++ {
 		found := false

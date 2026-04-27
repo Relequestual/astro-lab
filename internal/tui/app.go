@@ -60,7 +60,7 @@ type Model struct {
 }
 
 type pendingMutation struct {
-	repoID, repoName       string
+	repoID, repoName        string
 	newListIDs, prevListIDs []string
 }
 
@@ -114,6 +114,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 		m.token = msg.token
+		m.authScreen.validating = true
+		m.authScreen.info = "Validating resolved token..."
 		client := github.NewClient(msg.token)
 		return m, validateTokenCmdFromToken(client, msg.token)
 

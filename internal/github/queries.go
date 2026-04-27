@@ -211,11 +211,11 @@ func (c *Client) FetchStarredRepos(ctx context.Context, since time.Time, onProgr
 					Edges      []struct {
 						StarredAt time.Time `json:"starredAt"`
 						Node      struct {
-							ID             string `json:"id"`
-							NameWithOwner  string `json:"nameWithOwner"`
-							Description    string `json:"description"`
-							URL            string `json:"url"`
-							PrimaryLanguage struct {
+							ID              string `json:"id"`
+							NameWithOwner   string `json:"nameWithOwner"`
+							Description     string `json:"description"`
+							URL             string `json:"url"`
+							PrimaryLanguage *struct {
 								Name string `json:"name"`
 							} `json:"primaryLanguage"`
 							StargazerCount int `json:"stargazerCount"`
@@ -314,11 +314,11 @@ func (c *Client) FetchListItems(ctx context.Context, listID string, onProgress P
 				Items struct {
 					TotalCount int `json:"totalCount"`
 					Nodes      []struct {
-						ID             string `json:"id"`
-						NameWithOwner  string `json:"nameWithOwner"`
-						Description    string `json:"description"`
-						URL            string `json:"url"`
-						PrimaryLanguage struct {
+						ID              string `json:"id"`
+						NameWithOwner   string `json:"nameWithOwner"`
+						Description     string `json:"description"`
+						URL             string `json:"url"`
+						PrimaryLanguage *struct {
 							Name string `json:"name"`
 						} `json:"primaryLanguage"`
 						StargazerCount int `json:"stargazerCount"`

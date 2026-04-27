@@ -71,15 +71,15 @@ type showListPickerMsg struct {
 
 type listPickerConfirmedMsg struct {
 	repoID, repoName string
-	selectedIDs       []string
-	previousIDs       []string
+	selectedIDs      []string
+	previousIDs      []string
 }
 
 // Mutation execution messages
 
 type updateListsResultMsg struct {
 	repoID, repoName string
-	err               error
+	err              error
 }
 
 type undoResultMsg struct {

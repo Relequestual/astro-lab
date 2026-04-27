@@ -27,6 +27,8 @@ func NewUndoStack(maxSize int) *UndoStack {
 // Push adds an entry, evicting the oldest if at capacity.
 func (s *UndoStack) Push(e UndoEntry) {
 	if len(s.entries) >= s.maxSize {
+		// Clear evicted slot to allow GC of referenced data.
+		s.entries[0] = UndoEntry{}
 		s.entries = s.entries[1:]
 	}
 	s.entries = append(s.entries, e)
@@ -37,8 +39,11 @@ func (s *UndoStack) Pop() (UndoEntry, bool) {
 	if len(s.entries) == 0 {
 		return UndoEntry{}, false
 	}
-	e := s.entries[len(s.entries)-1]
-	s.entries = s.entries[:len(s.entries)-1]
+	last := len(s.entries) - 1
+	e := s.entries[last]
+	// Clear popped slot to allow GC of referenced data.
+	s.entries[last] = UndoEntry{}
+	s.entries = s.entries[:last]
 	return e, true
 }
 

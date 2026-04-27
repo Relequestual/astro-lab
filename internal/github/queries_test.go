@@ -123,11 +123,11 @@ func TestParseStarredReposResponse(t *testing.T) {
 				Edges []struct {
 					StarredAt time.Time `json:"starredAt"`
 					Node      struct {
-						ID             string `json:"id"`
-						NameWithOwner  string `json:"nameWithOwner"`
-						Description    string `json:"description"`
-						URL            string `json:"url"`
-						PrimaryLanguage struct {
+						ID              string `json:"id"`
+						NameWithOwner   string `json:"nameWithOwner"`
+						Description     string `json:"description"`
+						URL             string `json:"url"`
+						PrimaryLanguage *struct {
 							Name string `json:"name"`
 						} `json:"primaryLanguage"`
 						StargazerCount int `json:"stargazerCount"`
@@ -154,8 +154,8 @@ func TestParseStarredReposResponse(t *testing.T) {
 	if edges[0].Node.NameWithOwner != "charmbracelet/bubbletea" {
 		t.Errorf("nameWithOwner: got %q", edges[0].Node.NameWithOwner)
 	}
-	if edges[0].Node.PrimaryLanguage.Name != "Go" {
-		t.Errorf("primaryLanguage.name: got %q want %q", edges[0].Node.PrimaryLanguage.Name, "Go")
+	if edges[0].Node.PrimaryLanguage == nil || edges[0].Node.PrimaryLanguage.Name != "Go" {
+		t.Errorf("primaryLanguage.name: expected %q", "Go")
 	}
 	if edges[0].Node.StargazerCount != 25000 {
 		t.Errorf("stargazerCount: got %d want %d", edges[0].Node.StargazerCount, 25000)
@@ -165,6 +165,61 @@ func TestParseStarredReposResponse(t *testing.T) {
 	}
 	if !data.Viewer.StarredRepositories.PageInfo.HasNextPage {
 		t.Error("expected hasNextPage to be true")
+	}
+}
+
+func TestParseStarredReposNullLanguage(t *testing.T) {
+	fixture := `{
+        "viewer": {
+            "starredRepositories": {
+                "edges": [
+                    {
+                        "starredAt": "2024-03-15T12:00:00Z",
+                        "node": {
+                            "id": "R_789",
+                            "nameWithOwner": "user/nolang",
+                            "description": "",
+                            "url": "https://github.com/user/nolang",
+                            "primaryLanguage": null,
+                            "stargazerCount": 10,
+                            "forkCount": 2
+                        }
+                    }
+                ],
+                "pageInfo": {
+                    "endCursor": "c1",
+                    "hasNextPage": false
+                }
+            }
+        }
+    }`
+
+	var data struct {
+		Viewer struct {
+			StarredRepositories struct {
+				Edges []struct {
+					StarredAt time.Time `json:"starredAt"`
+					Node      struct {
+						ID              string `json:"id"`
+						PrimaryLanguage *struct {
+							Name string `json:"name"`
+						} `json:"primaryLanguage"`
+					} `json:"node"`
+				} `json:"edges"`
+			} `json:"starredRepositories"`
+		} `json:"viewer"`
+	}
+
+	if err := json.Unmarshal([]byte(fixture), &data); err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	edges := data.Viewer.StarredRepositories.Edges
+	if len(edges) != 1 {
+		t.Fatalf("expected 1 edge, got %d", len(edges))
+	}
+	if edges[0].Node.PrimaryLanguage != nil {
+		t.Errorf("expected nil PrimaryLanguage, got %+v", edges[0].Node.PrimaryLanguage)
 	}
 }
 
@@ -195,11 +250,11 @@ func TestParseListItemsResponse(t *testing.T) {
 		Node struct {
 			Items struct {
 				Nodes []struct {
-					ID             string `json:"id"`
-					NameWithOwner  string `json:"nameWithOwner"`
-					Description    string `json:"description"`
-					URL            string `json:"url"`
-					PrimaryLanguage struct {
+					ID              string `json:"id"`
+					NameWithOwner   string `json:"nameWithOwner"`
+					Description     string `json:"description"`
+					URL             string `json:"url"`
+					PrimaryLanguage *struct {
 						Name string `json:"name"`
 					} `json:"primaryLanguage"`
 					StargazerCount int `json:"stargazerCount"`
@@ -223,14 +278,62 @@ func TestParseListItemsResponse(t *testing.T) {
 	if node.ID != "R_456" {
 		t.Errorf("id: got %q", node.ID)
 	}
-	if node.PrimaryLanguage.Name != "Go" {
-		t.Errorf("primaryLanguage.name: got %q want %q", node.PrimaryLanguage.Name, "Go")
+	if node.PrimaryLanguage == nil || node.PrimaryLanguage.Name != "Go" {
+		t.Errorf("primaryLanguage.name: expected %q", "Go")
 	}
 	if node.StargazerCount != 120000 {
 		t.Errorf("stargazerCount: got %d want %d", node.StargazerCount, 120000)
 	}
 	if node.ForkCount != 17000 {
 		t.Errorf("forkCount: got %d want %d", node.ForkCount, 17000)
+	}
+}
+
+func TestParseListItemsNullLanguage(t *testing.T) {
+	fixture := `{
+        "node": {
+            "items": {
+                "nodes": [
+                    {
+                        "id": "R_nolang",
+                        "nameWithOwner": "user/nolang",
+                        "description": "",
+                        "url": "https://github.com/user/nolang",
+                        "primaryLanguage": null,
+                        "stargazerCount": 5,
+                        "forkCount": 1
+                    }
+                ],
+                "pageInfo": {
+                    "endCursor": "c1",
+                    "hasNextPage": false
+                }
+            }
+        }
+    }`
+
+	var data struct {
+		Node struct {
+			Items struct {
+				Nodes []struct {
+					ID              string `json:"id"`
+					PrimaryLanguage *struct {
+						Name string `json:"name"`
+					} `json:"primaryLanguage"`
+				} `json:"nodes"`
+			} `json:"items"`
+		} `json:"node"`
+	}
+
+	if err := json.Unmarshal([]byte(fixture), &data); err != nil {
+		t.Fatalf("parse error: %v", err)
+	}
+
+	if len(data.Node.Items.Nodes) != 1 {
+		t.Fatalf("expected 1 item, got %d", len(data.Node.Items.Nodes))
+	}
+	if data.Node.Items.Nodes[0].PrimaryLanguage != nil {
+		t.Errorf("expected nil PrimaryLanguage, got %+v", data.Node.Items.Nodes[0].PrimaryLanguage)
 	}
 }
 
