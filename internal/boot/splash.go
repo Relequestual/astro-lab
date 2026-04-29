@@ -29,6 +29,7 @@ var (
 	starBrt = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true) // bold white – central star
 	starDim = lipgloss.NewStyle().Foreground(lipgloss.Color("#87CEEB"))            // sky blue – dim/emerging star
 	sparkSt = lipgloss.NewStyle().Foreground(lipgloss.Color("#00AFAF"))            // teal – outer sparkles
+	titleSt = lipgloss.NewStyle().Foreground(lipgloss.Color("#00D7FF")).Bold(true) // bold cyan – hex title
 )
 
 type tickMsg struct{}
@@ -76,7 +77,7 @@ func (m Model) View() string {
 //	row 4  :         /                                               \
 //	row 5  :        /                                                 \
 //	row 6  :       /                                                   \
-//	row 7  :       |                      [wall]                       |
+//	row 7  :       |            ASTRO LAB (title)                    |
 //	row 8  :       |            ·────────────┼────────────·            |
 //	row 9  :       |            ·            │            ·            |
 //	row 10 :       |  ──── · ──── · ──── · ────★──── · ──── · ──── · ──  |  ← star
@@ -100,6 +101,7 @@ func buildFrame(f, termWidth int) string {
 	S := starBrt.Render
 	D := starDim.Render
 	K := sparkSt.Render
+	L := titleSt.Render
 
 	empty := strings.Repeat(" ", frameWidth)
 
@@ -176,6 +178,10 @@ func buildFrame(f, termWidth int) string {
 	// Bright star → 6+1+25+1+25+1+6=65
 	ctrStar := "      " + H("|") + T(ctrArm) + S("★") + T(ctrArm) + H("|") + "      "
 
+	// ── title row – "ASTRO LAB" centred in the upper wall (row 7) ───────────────
+	// Interior: 21 sp + 9 chars + 21 sp = 51; total: 6+1+51+1+6=65
+	wallText := "      " + H("|") + strings.Repeat(" ", 21) + L("ASTRO LAB") + strings.Repeat(" ", 21) + H("|") + "      "
+
 	// ── sparkle decoration rows ────────────────────────────────────────────────
 	// Two ✦ at cols 2 and 62 → 2+1+59+1+2=65
 	sparkRow := "  " + K("✦") + strings.Repeat(" ", 59) + K("✦") + "  "
@@ -195,7 +201,7 @@ func buildFrame(f, termWidth int) string {
 		rows = [21]string{
 			empty, hexTopBar,
 			diagA1, diagA2, diagA3, diagA4, diagA5,
-			wallPlain, wallPlain, wallPlain, wallPlain, wallPlain, wallPlain, wallPlain,
+			wallText, wallPlain, wallPlain, wallPlain, wallPlain, wallPlain, wallPlain,
 			diagB5, diagB4, diagB3, diagB2, diagB1,
 			hexBotBar, empty,
 		}
@@ -203,7 +209,7 @@ func buildFrame(f, termWidth int) string {
 		rows = [21]string{
 			empty, hexTopBar,
 			diagA1v, diagA2v, diagA3v, diagA4v, diagA5v,
-			wallVert, wallVert, wallVert, wallVert, wallVert, wallVert, wallVert,
+			wallText, wallVert, wallVert, wallVert, wallVert, wallVert, wallVert,
 			diagB5v, diagB4v, diagB3v, diagB2v, diagB1v,
 			hexBotBar, empty,
 		}
@@ -211,7 +217,7 @@ func buildFrame(f, termWidth int) string {
 		rows = [21]string{
 			empty, hexTopBar,
 			diagA1v, diagA2v, diagA3v, diagA4v, diagA5v,
-			wallVert, wallSec1, wallSec2, ctrTrace, wallSec2, wallSec1, wallVert,
+			wallText, wallSec1, wallSec2, ctrTrace, wallSec2, wallSec1, wallVert,
 			diagB5v, diagB4v, diagB3v, diagB2v, diagB1v,
 			hexBotBar, empty,
 		}
@@ -219,7 +225,7 @@ func buildFrame(f, termWidth int) string {
 		rows = [21]string{
 			empty, hexTopBar,
 			diagA1v, diagA2v, diagA3v, diagA4v, diagA5v,
-			wallVert, wallSec1, wallSec2, ctrDim, wallSec2, wallSec1, wallVert,
+			wallText, wallSec1, wallSec2, ctrDim, wallSec2, wallSec1, wallVert,
 			diagB5v, diagB4v, diagB3v, diagB2v, diagB1v,
 			hexBotBar, empty,
 		}
@@ -227,7 +233,7 @@ func buildFrame(f, termWidth int) string {
 		rows = [21]string{
 			empty, hexTopBar,
 			diagA1v, diagA2v, diagA3v, diagA4v, diagA5v,
-			wallVert, wallSec1, wallSec2, ctrStar, wallSec2, wallSec1, wallVert,
+			wallText, wallSec1, wallSec2, ctrStar, wallSec2, wallSec1, wallVert,
 			diagB5v, diagB4v, diagB3v, diagB2v, diagB1v,
 			hexBotBar, empty,
 		}
@@ -235,7 +241,7 @@ func buildFrame(f, termWidth int) string {
 		rows = [21]string{
 			sparkRow, hexTopBar,
 			diagA1v, diagA2v, diagA3v, diagA4v, diagA5v,
-			wallVert, wallSec1, wallSec2, ctrStar, wallSec2, wallSec1, wallVert,
+			wallText, wallSec1, wallSec2, ctrStar, wallSec2, wallSec1, wallVert,
 			diagB5v, diagB4v, diagB3v, diagB2v, diagB1v,
 			hexBotBar, sparkRow,
 		}
@@ -243,7 +249,7 @@ func buildFrame(f, termWidth int) string {
 		rows = [21]string{
 			empty, hexTopBar,
 			diagA1v, diagA2v, diagA3v, diagA4v, diagA5v,
-			wallVert, wallSec1, wallSec2, ctrStar, wallSec2, wallSec1, wallVert,
+			wallText, wallSec1, wallSec2, ctrStar, wallSec2, wallSec1, wallVert,
 			diagB5v, diagB4v, diagB3v, diagB2v, diagB1v,
 			hexBotBar, empty,
 		}
@@ -251,7 +257,7 @@ func buildFrame(f, termWidth int) string {
 		rows = [21]string{
 			sparkRow, hexTopBar,
 			diagA1v, diagA2v, diagA3v, diagA4v, diagA5v,
-			wallVert, wallSec1, wallSec2, ctrStar, wallSec2, wallSec1, wallVert,
+			wallText, wallSec1, wallSec2, ctrStar, wallSec2, wallSec1, wallVert,
 			diagB5v, diagB4v, diagB3v, diagB2v, diagB1v,
 			hexBotBar, sparkRow,
 		}
@@ -259,7 +265,7 @@ func buildFrame(f, termWidth int) string {
 		rows = [21]string{
 			sparkRow, hexTopBar,
 			diagA1v, diagA2v, diagA3v, diagA4v, diagA5v,
-			wallVert, wallSec1, wallSec2, ctrStar, wallSec2, wallSec1, wallVert,
+			wallText, wallSec1, wallSec2, ctrStar, wallSec2, wallSec1, wallVert,
 			diagB5v, diagB4v, diagB3v, diagB2v, diagB1v,
 			hexBotBar, sparkRow,
 		}
